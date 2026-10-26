@@ -1,0 +1,31 @@
+{
+  "mcpServers": {
+    "shadcn": {
+      "command": "npx",
+      "args": [
+        "shadcn@latest",
+        "mcp"
+      ]
+    },
+    "next-devtools": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "next-devtools-mcp@latest"
+      ]
+    },
+    "motion": {
+      "url": "https://mcp.motion.dev"
+    },
+    "motion-plus": {
+      "url": "https://mcp.motion.dev/plus"
+    },
+    "laravel-boost": {
+      "command": "php",
+      "args": [
+          "API/mahfuz-ahmed-api/artisan",
+          "boost:mcp"
+      ]
+  }
+  }
+}
