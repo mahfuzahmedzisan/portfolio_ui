@@ -69,6 +69,33 @@ function LoginForm() {
     }
   }, [sessionExpired]);
 
+  // One-shot POST clear: GET navigations stay non-mutating; proxy allows
+  // /login?reason=session-expired while a stale JWE cookie still exists.
+  useEffect(() => {
+    if (!sessionExpired) return;
+
+    const flag = "port:session-expired-logout-once";
+    if (sessionStorage.getItem(flag) === "1") return;
+    sessionStorage.setItem(flag, "1");
+
+    void fetch("/api/auth/logout", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { Accept: "application/json" },
+    })
+      .catch(() => undefined)
+      .finally(() => {
+        const params = new URLSearchParams(window.location.search);
+        params.delete("reason");
+        const qs = params.toString();
+        window.history.replaceState(
+          null,
+          "",
+          qs ? `/login?${qs}` : "/login",
+        );
+      });
+  }, [sessionExpired]);
+
   useEffect(() => {
     void fetch("/api/settings/public")
       .then((response) => (response.ok ? response.json() : null))
@@ -97,6 +124,7 @@ function LoginForm() {
     if ("user" in result.data) {
       await syncStoredThemeToAccount(result.data.user.theme);
     }
+    sessionStorage.removeItem("port:session-expired-logout-once");
     toast.success("Signed in");
     router.push(next);
     router.refresh();

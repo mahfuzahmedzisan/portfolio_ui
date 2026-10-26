@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 
 import { ApiError } from "@/lib/auth/api-error";
-import { getSession } from "@/lib/auth/auth-cookies";
+import { requireAdminSession } from "@/lib/auth/require-admin";
 import { SessionExpiredError } from "@/lib/auth/session-expired";
 import { createAdminMedia, listAdminMedia } from "@/lib/media/library";
+import { rejectUntrustedBrowserOrigin } from "@/lib/security/trusted-origin";
 
 function jsonError(error: unknown, fallback: string) {
   if (error instanceof SessionExpiredError) {
@@ -21,10 +22,8 @@ function jsonError(error: unknown, fallback: string) {
 }
 
 export async function GET(request: Request) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ message: "Unauthenticated." }, { status: 401 });
-  }
+  const { response } = await requireAdminSession();
+  if (response) return response;
 
   const url = new URL(request.url);
   const perPage = url.searchParams.get("per_page")?.trim() || "24";
@@ -47,10 +46,11 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ message: "Unauthenticated." }, { status: 401 });
-  }
+  const forbidden = rejectUntrustedBrowserOrigin(request);
+  if (forbidden) return forbidden;
+
+  const { response } = await requireAdminSession();
+  if (response) return response;
 
   let body: {
     title?: string;

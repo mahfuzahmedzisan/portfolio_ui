@@ -14,9 +14,11 @@
     "analyze": "next experimental-analyze --output",
     "format": "prettier --write .",
     "prepare": "husky",
-    "typecheck": "tsc --noEmit",
+    "typegen": "next typegen",
+    "typecheck": "pnpm typegen && tsc --noEmit",
     "test:svg": "node --test tests/svg/*.test.mjs",
     "test:auth": "node --test --experimental-strip-types tests/auth/*.test.ts",
+    "test:security": "node --test --experimental-strip-types tests/auth/*.test.ts tests/security/*.test.ts",
     "test:e2e": "playwright test"
   },
   "lint-staged": {

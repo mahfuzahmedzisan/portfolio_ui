@@ -5,6 +5,7 @@ import { ApiError } from "@/lib/auth/api-error";
 import { getSession, updateSession } from "@/lib/auth/auth-cookies";
 import { deleteAvatar, uploadAvatar } from "@/lib/auth/profile";
 import { rejectOversizedBody } from "@/lib/http/body-limit";
+import { rejectUntrustedBrowserOrigin } from "@/lib/security/trusted-origin";
 
 /** Matches AllowedAvatar::MAX_KILOBYTES on the API. */
 const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
@@ -33,6 +34,9 @@ function errorResponse(error: unknown, fallback: string) {
 }
 
 export async function POST(request: Request) {
+  const forbidden = rejectUntrustedBrowserOrigin(request);
+  if (forbidden) return forbidden;
+
   const { session, response } = await requireSession();
   if (!session || response) return response;
 
@@ -64,7 +68,10 @@ export async function POST(request: Request) {
   }
 }
 
-export async function DELETE() {
+export async function DELETE(request: Request) {
+  const forbidden = rejectUntrustedBrowserOrigin(request);
+  if (forbidden) return forbidden;
+
   const { session, response } = await requireSession();
   if (!session || response) return response;
 

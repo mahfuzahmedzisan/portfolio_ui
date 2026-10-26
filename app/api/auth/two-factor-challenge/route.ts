@@ -9,6 +9,7 @@ import {
   clearChallengeToken,
   readChallengeToken,
 } from "@/lib/auth/two-factor-cookie";
+import { rejectUntrustedBrowserOrigin } from "@/lib/security/trusted-origin";
 
 const challengeSchema = z
   .object({
@@ -21,6 +22,9 @@ const challengeSchema = z
   });
 
 export async function POST(request: Request) {
+  const forbidden = rejectUntrustedBrowserOrigin(request);
+  if (forbidden) return forbidden;
+
   try {
     const challengeToken = await readChallengeToken();
     if (!challengeToken) {

@@ -4,6 +4,7 @@ import axios, { AxiosError } from "axios";
 import { headers } from "next/headers";
 import { ApiError } from "@/lib/auth/api-error";
 import { resolveFrontendOrigin } from "@/lib/auth/frontend-origin";
+import { clientIpFromRequestHeaders } from "@/lib/security/client-ip";
 
 function getApiBaseUrl(): string {
   const base = process.env.LARAVEL_API_URL;
@@ -40,31 +41,23 @@ laravelHttp.interceptors.request.use(async (config) => {
   config.headers.set("X-Frontend-Origin", await resolveFrontendOrigin());
 
   const client = await browserClient();
-  if (client.ip) config.headers.set("X-Client-IP", client.ip);
+  // Phase 01: never set X-Client-IP from spoofable browser headers (C4).
   if (client.userAgent) config.headers.set("X-Client-User-Agent", client.userAgent);
 
   return config;
 });
 
 /**
- * Laravel keys its rate limiters and device history on this IP. The left-most
- * X-Forwarded-For entry is whatever the client typed, so the proxy-set headers
- * win and XFF falls back to its right-most (last proxy appended) entry.
+ * Client metadata for Laravel device history / diagnostics.
+ * IP forwarding is intentionally omitted — see `clientIpFromRequestHeaders`.
  */
 async function browserClient(): Promise<{ ip: string | null; userAgent: string | null }> {
   try {
     const headerStore = await headers();
-    const forwarded = headerStore
-      .get("x-forwarded-for")
-      ?.split(",")
-      .map((part) => part.trim())
-      .filter(Boolean);
-    const ip =
-      headerStore.get("x-real-ip")?.trim() ||
-      headerStore.get("x-vercel-forwarded-for")?.split(",")[0]?.trim() ||
-      forwarded?.at(-1) ||
-      null;
-    return { ip, userAgent: headerStore.get("user-agent") };
+    return {
+      ip: clientIpFromRequestHeaders(headerStore),
+      userAgent: headerStore.get("user-agent"),
+    };
   } catch {
     return { ip: null, userAgent: null };
   }

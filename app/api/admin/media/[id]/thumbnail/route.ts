@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 
 import { ApiError } from "@/lib/auth/api-error";
-import { getSession } from "@/lib/auth/auth-cookies";
+import { requireAdminSession } from "@/lib/auth/require-admin";
 import { SessionExpiredError } from "@/lib/auth/session-expired";
 import { rejectOversizedBody } from "@/lib/http/body-limit";
 import { uploadAdminMediaThumbnail } from "@/lib/media/library";
+import { rejectUntrustedBrowserOrigin } from "@/lib/security/trusted-origin";
 
 /** Matches StoreMediaThumbnailRequest (max:8192 KB) on the API. */
 const THUMBNAIL_MAX_BYTES = 8 * 1024 * 1024;
@@ -25,10 +26,11 @@ export async function POST(
   request: Request,
   context: { params: Promise<{ id: string }> },
 ) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ message: "Unauthenticated." }, { status: 401 });
-  }
+  const forbidden = rejectUntrustedBrowserOrigin(request);
+  if (forbidden) return forbidden;
+
+  const { response } = await requireAdminSession();
+  if (response) return response;
 
   const { id } = await context.params;
   const mediaId = Number(id);

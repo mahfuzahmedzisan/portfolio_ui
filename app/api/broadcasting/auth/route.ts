@@ -2,12 +2,16 @@ import { NextResponse } from "next/server";
 
 import { getSession } from "@/lib/auth/auth-cookies";
 import { laravelHttp, toApiError } from "@/lib/auth/http";
+import { rejectUntrustedBrowserOrigin } from "@/lib/security/trusted-origin";
 
 /**
  * Echo never sees the Sanctum bearer token. This route reads the httpOnly
  * session and forwards `socket_id` / `channel_name` to the API.
  */
 export async function POST(request: Request) {
+  const forbidden = rejectUntrustedBrowserOrigin(request);
+  if (forbidden) return forbidden;
+
   const session = await getSession();
   if (!session?.accessToken) {
     return NextResponse.json({ message: "Unauthenticated." }, { status: 401 });

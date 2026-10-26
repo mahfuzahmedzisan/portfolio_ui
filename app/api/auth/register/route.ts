@@ -4,6 +4,7 @@ import { z } from "zod";
 import { authErrorResponse } from "@/lib/auth/route-error";
 import { requestRegister } from "@/lib/auth/laravel-auth";
 import { createSession } from "@/lib/auth/auth-cookies";
+import { rejectUntrustedBrowserOrigin } from "@/lib/security/trusted-origin";
 
 const registerSchema = z
   .object({
@@ -18,6 +19,9 @@ const registerSchema = z
   });
 
 export async function POST(request: Request) {
+  const forbidden = rejectUntrustedBrowserOrigin(request);
+  if (forbidden) return forbidden;
+
   try {
     const json = await request.json();
     const parsed = registerSchema.safeParse(json);

@@ -5,6 +5,7 @@ import { authErrorResponse } from "@/lib/auth/route-error";
 import { isTwoFactorChallenge, requestLogin } from "@/lib/auth/laravel-auth";
 import { createSession } from "@/lib/auth/auth-cookies";
 import { storeChallengeToken } from "@/lib/auth/two-factor-cookie";
+import { rejectUntrustedBrowserOrigin } from "@/lib/security/trusted-origin";
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -13,6 +14,9 @@ const loginSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const forbidden = rejectUntrustedBrowserOrigin(request);
+  if (forbidden) return forbidden;
+
   try {
     const json = await request.json();
     const parsed = loginSchema.safeParse(json);

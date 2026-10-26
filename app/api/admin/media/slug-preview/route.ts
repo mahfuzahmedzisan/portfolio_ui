@@ -1,15 +1,13 @@
 import { NextResponse } from "next/server";
 
 import { ApiError } from "@/lib/auth/api-error";
-import { getSession } from "@/lib/auth/auth-cookies";
+import { requireAdminSession } from "@/lib/auth/require-admin";
 import { SessionExpiredError } from "@/lib/auth/session-expired";
 import { previewAdminMediaSlugs } from "@/lib/media/library";
 
 export async function GET(request: Request) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ message: "Unauthenticated." }, { status: 401 });
-  }
+  const { response } = await requireAdminSession();
+  if (response) return response;
 
   const url = new URL(request.url);
   const title = url.searchParams.get("title")?.trim() ?? "";

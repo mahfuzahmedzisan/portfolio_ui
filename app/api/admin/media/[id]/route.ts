@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 
 import { ApiError } from "@/lib/auth/api-error";
-import { getSession } from "@/lib/auth/auth-cookies";
+import { requireAdminSession } from "@/lib/auth/require-admin";
 import { SessionExpiredError } from "@/lib/auth/session-expired";
 import { deleteAdminMedia, getAdminMedia, updateAdminMedia } from "@/lib/media/library";
+import { rejectUntrustedBrowserOrigin } from "@/lib/security/trusted-origin";
 
 function jsonError(error: unknown, fallback: string) {
   if (error instanceof SessionExpiredError) {
@@ -30,10 +31,8 @@ export async function GET(
   _request: Request,
   context: { params: Promise<{ id: string }> },
 ) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ message: "Unauthenticated." }, { status: 401 });
-  }
+  const { response } = await requireAdminSession();
+  if (response) return response;
 
   const mediaId = await idFrom(context.params);
   if (mediaId === null) {
@@ -52,10 +51,11 @@ export async function PATCH(
   request: Request,
   context: { params: Promise<{ id: string }> },
 ) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ message: "Unauthenticated." }, { status: 401 });
-  }
+  const forbidden = rejectUntrustedBrowserOrigin(request);
+  if (forbidden) return forbidden;
+
+  const { response } = await requireAdminSession();
+  if (response) return response;
 
   const mediaId = await idFrom(context.params);
   if (mediaId === null) {
@@ -83,13 +83,14 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ id: string }> },
 ) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ message: "Unauthenticated." }, { status: 401 });
-  }
+  const forbidden = rejectUntrustedBrowserOrigin(request);
+  if (forbidden) return forbidden;
+
+  const { response } = await requireAdminSession();
+  if (response) return response;
 
   const mediaId = await idFrom(context.params);
   if (mediaId === null) {

@@ -75,7 +75,13 @@ async function handleProxy(request: NextRequest) {
     return redirectResponse;
   }
 
-  if (isAuthOnlyPage && authenticated) {
+  // Stale Sanctum token + still-valid JWE: allow /login?reason=session-expired
+  // so the login page can POST-clear once. Otherwise proxy would bounce to
+  // /admin → 401 → login → loop.
+  const sessionExpiredIntent =
+    request.nextUrl.searchParams.get("reason") === SESSION_EXPIRED_REASON;
+
+  if (isAuthOnlyPage && authenticated && !sessionExpiredIntent) {
     const adminUrl = request.nextUrl.clone();
     adminUrl.pathname = "/admin";
     adminUrl.search = "";

@@ -3,10 +3,14 @@ import { z } from "zod";
 
 import { authErrorResponse } from "@/lib/auth/route-error";
 import { requestForgotPassword } from "@/lib/auth/laravel-auth";
+import { rejectUntrustedBrowserOrigin } from "@/lib/security/trusted-origin";
 
 const schema = z.object({ email: z.string().email() });
 
 export async function POST(request: Request) {
+  const forbidden = rejectUntrustedBrowserOrigin(request);
+  if (forbidden) return forbidden;
+
   try {
     const json = await request.json();
     const parsed = schema.safeParse(json);

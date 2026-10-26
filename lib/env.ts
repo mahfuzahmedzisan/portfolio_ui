@@ -16,10 +16,10 @@ const serverEnvSchema = z.object({
     .url("LARAVEL_API_URL must be a valid URL, e.g. http://127.0.0.1:8000"),
   BFF_SECRET: z
     .string({ error: "BFF_SECRET is required — shared secret sent as X-BFF-Secret, must match the API." })
-    .min(16, "BFF_SECRET should be at least 16 characters. Generate with: openssl rand -base64 32"),
+    .min(32, "BFF_SECRET must be at least 32 characters. Generate with: openssl rand -base64 32"),
   SESSION_SECRET: z
     .string({ error: "SESSION_SECRET is required — used to encrypt the session cookie." })
-    .min(16, "SESSION_SECRET should be at least 16 characters. Generate with: openssl rand -base64 32"),
+    .min(32, "SESSION_SECRET must be at least 32 characters. Generate with: openssl rand -base64 32"),
   NEXT_PUBLIC_SITE_URL: z
     .string({ error: "NEXT_PUBLIC_SITE_URL is required — public URL of this app, used for canonical/OG tags." })
     .url("NEXT_PUBLIC_SITE_URL must be a valid URL, e.g. https://example.com"),

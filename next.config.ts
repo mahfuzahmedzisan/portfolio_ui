@@ -6,6 +6,9 @@ import { securityHeaders } from "./lib/security/headers";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // C3b: do not set experimental.serverActions.allowedOrigins unless preview
+  // or reverse-proxy hosts are evidenced. Next's built-in Origin vs Host /
+  // X-Forwarded-Host CSRF checks for Server Actions remain enabled.
   // Setting this replaces Next's default list, so extend it: the SEO health
   // scanner reads metadata from <head>, which streaming would leave empty.
   // The token must match the one baked into the API's SEO_SCANNER_USER_AGENT
