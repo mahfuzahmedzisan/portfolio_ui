@@ -20,6 +20,7 @@ export const MODEL_URLS = {
   tunnel: "/3d/models/tunnel.glb",
   engine: "/3d/models/engine.glb",
   vault: "/3d/models/vault.glb",
+  skills: "/3d/models/skills.glb",
 } as const
 
 export type ModelName = keyof typeof MODEL_URLS
@@ -50,7 +51,7 @@ function toFloat(attribute: BufferAttribute): Float32BufferAttribute {
  * Meshopt export quantizes positions and moves the dequantization scale onto the
  * node, so instanced or re-parented geometry needs that transform baked back in.
  */
-function bakeParts(root: Object3D): Part[] {
+export function bakeParts(root: Object3D): Part[] {
   root.updateWorldMatrix(true, true)
   const parts: Part[] = []
   root.traverse((child) => {

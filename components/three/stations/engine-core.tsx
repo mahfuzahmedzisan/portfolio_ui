@@ -1,71 +1,24 @@
 "use client"
 
 import { Billboard, Text } from "@react-three/drei"
-import { type ThreeEvent, useFrame } from "@react-three/fiber"
-import { easing } from "maath"
+import { useFrame } from "@react-three/fiber"
 import { useMemo, useRef } from "react"
-import { Color, type Group, type Mesh, type MeshBasicMaterial, type PointLight, type ShaderMaterial } from "three"
+import { Color, type Group, type Mesh, type PointLight, type ShaderMaterial } from "three"
 
 import type { Experience, Skill } from "@/content/lab/mock"
-import { useLab } from "@/lib/three/store"
 import { ANCHORS } from "@/lib/three/stations.config"
 
-import { audio } from "../audio/audio-manager"
 import { Parts } from "../instanced-parts"
 import { neonMaterial, type Part, usePalette, useParts } from "../models"
 import { createHologramMaterial } from "../shaders/hologram"
 import { DISPLAY_FONT } from "./browser-city"
+import { SkillOrbits } from "./skill-artifacts"
 
 const NODES = ["Core", "Ring_1", "Ring_2", "Ring_3", "Skill_Pod", "Conveyor", "Crate"] as const
 const LARAVEL = "#FF2D20"
-const ORBIT_RADIUS = 6.2
 const BELT_LENGTH = 14
 
 type EngineParts = Record<(typeof NODES)[number], Part[]>
-
-function SkillPod({ skill, index, total, parts }: { skill: Skill; index: number; total: number; parts: EngineParts }) {
-  const group = useRef<Group>(null)
-  const palette = usePalette("#FCA5A5", 2.2)
-  const hovered = useLab((s) => s.hoveredSkill === skill.id)
-  const hoverSkill = useLab((s) => s.hoverSkill)
-  const neon = palette.Neon as MeshBasicMaterial
-  const idle = useMemo(() => new Color("#FCA5A5").multiplyScalar(2.2), [])
-  const active = useMemo(() => new Color(LARAVEL).multiplyScalar(6), [])
-
-  useFrame((state, delta) => {
-    const g = group.current
-    if (!g) return
-    const a = (index / total) * Math.PI * 2 + state.clock.elapsedTime * 0.12
-    g.position.set(Math.cos(a) * ORBIT_RADIUS, Math.sin(a * 2) * 0.8 + Math.sin(a) * 1.2, Math.sin(a) * ORBIT_RADIUS)
-    g.rotation.y += delta * 0.6
-    easing.damp(g.scale, "x", hovered ? 1.35 : 1, 0.15, delta)
-    g.scale.y = g.scale.z = g.scale.x
-    easing.dampC(neon.color, hovered ? active : idle, 0.15, delta)
-  })
-
-  const over = (e: ThreeEvent<PointerEvent>) => {
-    e.stopPropagation()
-    hoverSkill(skill.id)
-    audio.play("tick")
-    document.body.style.cursor = "pointer"
-  }
-  const out = () => {
-    if (useLab.getState().hoveredSkill === skill.id) hoverSkill(null)
-    document.body.style.cursor = ""
-  }
-
-  return (
-    <group ref={group} onPointerOver={over} onPointerOut={out}>
-      <Parts parts={parts.Skill_Pod} palette={palette} />
-      <Billboard position={[0, 1.05, 0]}>
-        <Text font={DISPLAY_FONT} fontSize={0.32} anchorX="center" anchorY="bottom">
-          {skill.name}
-          <meshBasicMaterial color={hovered ? [3, 1, 0.8] : [1.3, 1.3, 1.4]} toneMapped={false} />
-        </Text>
-      </Billboard>
-    </group>
-  )
-}
 
 function Conveyor({ experiences, parts }: { experiences: Experience[]; parts: EngineParts }) {
   const palette = usePalette(LARAVEL, 2.4)
@@ -144,9 +97,7 @@ export function EngineCore({ skills, experiences }: { skills: Skill[]; experienc
         </group>
       ))}
       <pointLight ref={light} color={LARAVEL} distance={34} decay={1.6} />
-      {skills.map((skill, i) => (
-        <SkillPod key={skill.id} skill={skill} index={i} total={skills.length} parts={parts} />
-      ))}
+      <SkillOrbits skills={skills} pod={parts.Skill_Pod} />
       <Conveyor experiences={experiences} parts={parts} />
     </group>
   )

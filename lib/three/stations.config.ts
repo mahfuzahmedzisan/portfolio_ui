@@ -103,9 +103,9 @@ export function fogAt(progress: number): number {
 
 /** Where project crystal `index` of `count` floats inside the vault. */
 export function crystalPosition(index: number, count: number, target = new Vector3()): Vector3 {
-  const spacing = 2.8
-  const x = (index - (count - 1) / 2) * spacing
-  return target.set(ANCHORS.vault.x + x, ANCHORS.vault.y + 3, ANCHORS.vault.z)
+  // A shallow arc whose wings come forward, so outer crystals don't hide behind the panel.
+  const offset = index - (count - 1) / 2
+  return target.set(ANCHORS.vault.x + offset * 2.5, ANCHORS.vault.y + 3, ANCHORS.vault.z + Math.abs(offset) * 0.9)
 }
 
 /** Scroll progress at which a station is centred. */

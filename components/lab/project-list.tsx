@@ -3,14 +3,17 @@
 import { AnimatePresence, m } from "motion/react"
 import Link from "next/link"
 
-import type { LabProject } from "@/content/lab/mock"
+import type { LabProject, Skill } from "@/content/lab/mock"
 import { audio } from "@/components/three/audio/audio-manager"
 import { useLab } from "@/lib/three/store"
 
 /** Project records; "Query" dives the camera into the matching crystal. */
-export function ProjectList({ projects }: { projects: LabProject[] }) {
+export function ProjectList({ projects, skills }: { projects: LabProject[]; skills: Skill[] }) {
   const focused = useLab((s) => s.focusedProject)
   const focusProject = useLab((s) => s.focusProject)
+  const filterId = useLab((s) => s.skillFilter)
+  const setSkillFilter = useLab((s) => s.setSkillFilter)
+  const filter = skills.find((s) => s.id === filterId)
   const active = projects.find((p) => p.slug === focused)
 
   const query = (slug: string) => {
@@ -21,6 +24,20 @@ export function ProjectList({ projects }: { projects: LabProject[] }) {
 
   return (
     <div className="grid gap-4">
+      {filter ? (
+        <p className="flex items-center justify-between gap-3 rounded-lg border border-white/10 px-3 py-2 font-mono text-[11px] text-slate-400">
+          <span>
+            WHERE stack @&gt; <span style={{ color: filter.color }}>&apos;{filter.name}&apos;</span>
+          </span>
+          <button
+            type="button"
+            onClick={() => setSkillFilter(null)}
+            className="rounded-full border border-white/15 px-2 py-0.5 text-slate-300 transition hover:border-white/30 focus-visible:ring-2 focus-visible:ring-emerald-300 focus-visible:outline-none"
+          >
+            clear
+          </button>
+        </p>
+      ) : null}
       <ul className="grid gap-3">
         {projects.map((project) => (
           <li key={project.slug}>

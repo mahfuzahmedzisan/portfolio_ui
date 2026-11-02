@@ -1,102 +1,32 @@
 "use client"
 
 import { Environment, Lightformer, PerformanceMonitor, Preload, StatsGl, useProgress } from "@react-three/drei"
-import { Canvas, useFrame } from "@react-three/fiber"
-import { Suspense, useEffect, useMemo, useRef } from "react"
-import { BufferAttribute, BufferGeometry, Color, type FogExp2, type Mesh, type Points, type ShaderMaterial } from "three"
+import { Canvas } from "@react-three/fiber"
+import { type ReactNode, Suspense, useEffect } from "react"
 
-import type { Experience as ExperienceItem, LabProject, Skill } from "@/content/lab/mock"
 import { QUALITY, TIERS } from "@/lib/three/quality"
-import { seededRandom } from "@/lib/three/random"
-import { rig } from "@/lib/three/rig"
-import { useLab } from "@/lib/three/store"
-import { accentAt, fogAt } from "@/lib/three/stations.config"
-import { useTuning } from "@/lib/three/tuning"
+import { sceneKey, useLab } from "@/lib/three/store"
 
-import { CameraRig } from "./camera-rig"
 import { Effects } from "./effects"
+import { LookControls } from "./look-controls"
 import { preloadModels } from "./models"
-import { Packet, PacketFormation } from "./packet"
-import { createGridMaterial } from "./shaders/grid"
-import { createParticleMaterial } from "./shaders/particles"
-import { BrowserCity } from "./stations/browser-city"
-import { DatabaseVault } from "./stations/db-vault"
-import { EngineCore } from "./stations/engine-core"
-import { FiberTunnel } from "./stations/fiber-tunnel"
+import { ArchiveScene } from "./scenes/archive"
+import { CaseStudyScene } from "./scenes/case-study"
+import { type JourneyData, JourneyScene } from "./scenes/journey"
 
 preloadModels()
 
-export type ExperienceProps = {
-  skills: Skill[]
-  experiences: ExperienceItem[]
-  projects: LabProject[]
-  debug?: boolean
-}
+export type ExperienceProps = JourneyData & { debug?: boolean }
 
 const BACKGROUND = "#05070D"
 
-const accent = new Color()
-
-/** Floor grid whose tint, like the fog density, follows the station the packet is passing through. */
-function GridFloor() {
-  const grid = useRef<Mesh<BufferGeometry, ShaderMaterial>>(null)
-  const material = useMemo(() => createGridMaterial("#22D3EE"), [])
-
-  useFrame((state) => {
-    const fog = state.scene.fog as FogExp2 | null
-    if (fog) fog.density = fogAt(rig.progress) * useTuning.getState().fogScale
-    const uniforms = grid.current?.material.uniforms
-    if (!uniforms) return
-    uniforms.uColor.value.copy(accentAt(rig.progress, accent))
-    uniforms.uTime.value = state.clock.elapsedTime
-  })
-
-  return (
-    <>
-      <mesh ref={grid} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, -70]} material={material}>
-        <planeGeometry args={[160, 280]} />
-      </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, -70]}>
-        <planeGeometry args={[160, 280]} />
-        <meshStandardMaterial color="#03050a" metalness={0.9} roughness={0.32} />
-      </mesh>
-    </>
-  )
-}
-
-function AmbientDust({ count }: { count: number }) {
-  const points = useRef<Points<BufferGeometry, ShaderMaterial>>(null)
-  const material = useMemo(() => createParticleMaterial("#7dd3fc", 1.4), [])
-  const geometry = useMemo(() => {
-    const random = seededRandom(11)
-    const positions = new Float32Array(count * 3)
-    const seeds = new Float32Array(count)
-    for (let i = 0; i < count; i++) {
-      positions[i * 3] = (random() - 0.5) * 44
-      positions[i * 3 + 1] = random() * 16
-      positions[i * 3 + 2] = 30 - random() * 200
-      seeds[i] = random()
-    }
-    const g = new BufferGeometry()
-    g.setAttribute("position", new BufferAttribute(positions, 3))
-    g.setAttribute("aSeed", new BufferAttribute(seeds, 1))
-    return g
-  }, [count])
-
-  useFrame((state) => {
-    const uniforms = points.current?.material.uniforms
-    if (!uniforms) return
-    uniforms.uTime.value = state.clock.elapsedTime
-    uniforms.uPixelRatio.value = state.viewport.dpr
-  })
-
-  return <points ref={points} geometry={geometry} material={material} frustumCulled={false} />
-}
-
-/** Rendered inside Suspense, so it only mounts once every model and font has resolved. */
-function Ready() {
-  const setLoaded = useLab((s) => s.setLoaded)
-  useEffect(() => setLoaded(), [setLoaded])
+/** Rendered inside each scene's Suspense, so it only mounts once that scene's assets resolved. */
+function Ready({ id }: { id: string }) {
+  useEffect(() => {
+    const { loaded, setLoaded, setReadyScene } = useLab.getState()
+    if (!loaded) setLoaded()
+    setReadyScene(id)
+  }, [id])
   return null
 }
 
@@ -127,8 +57,24 @@ function Adaptive() {
   )
 }
 
+function SceneSlot({ id, children }: { id: string; children: ReactNode }) {
+  return (
+    <Suspense key={id} fallback={null}>
+      {children}
+      <Preload all />
+      <Ready id={id} />
+    </Suspense>
+  )
+}
+
+/**
+ * One canvas for every /lab route. Pages announce their scene through the store,
+ * so moving between the journey, the archive and a case study never drops the GL context.
+ */
 export default function Experience({ skills, experiences, projects, debug = false }: ExperienceProps) {
   const tier = useLab((s) => s.tier)
+  const scene = useLab((s) => s.scene)
+  const key = sceneKey(scene)
   const quality = QUALITY[tier]
 
   return (
@@ -151,20 +97,23 @@ export default function Experience({ skills, experiences, projects, debug = fals
           <Lightformer form="ring" intensity={1.5} color="#34D399" position={[10, 4, 0]} rotation-y={-Math.PI / 2} scale={4} />
         </Environment>
 
-        <Suspense fallback={null}>
-          <GridFloor />
-          <AmbientDust count={quality.particles} />
-          <BrowserCity />
-          <FiberTunnel />
-          <EngineCore skills={skills} experiences={experiences} />
-          <DatabaseVault projects={projects} />
-          <Packet />
-          <PacketFormation />
-          <CameraRig projects={projects} />
-          <Preload all />
-          <Ready />
-        </Suspense>
+        {scene?.kind === "journey" && key ? (
+          <SceneSlot id={key}>
+            <JourneyScene skills={skills} experiences={experiences} projects={projects} />
+          </SceneSlot>
+        ) : null}
+        {scene?.kind === "archive" && key ? (
+          <SceneSlot id={key}>
+            <ArchiveScene projects={scene.projects} />
+          </SceneSlot>
+        ) : null}
+        {scene?.kind === "case" && key ? (
+          <SceneSlot id={key}>
+            <CaseStudyScene study={scene.study} next={scene.next} skills={skills} />
+          </SceneSlot>
+        ) : null}
 
+        <LookControls />
         <Effects />
         <Adaptive />
         {debug ? <StatsGl className="!left-auto !right-2 !top-2" /> : null}

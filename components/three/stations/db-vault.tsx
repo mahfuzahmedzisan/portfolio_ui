@@ -17,7 +17,8 @@ import {
   Vector3,
 } from "three"
 
-import type { LabProject } from "@/content/lab/mock"
+import type { LabProject, Skill } from "@/content/lab/mock"
+import { look, wasDrag } from "@/lib/three/look"
 import { useLab } from "@/lib/three/store"
 import { ANCHORS, crystalPosition } from "@/lib/three/stations.config"
 
@@ -69,7 +70,9 @@ function createCrystalMaterial(color: string) {
 
 type ShaderMesh = Mesh<BufferGeometry, Material & { uniforms: Record<string, IUniform> }>
 
-function Crystal({ project, index, total, part }: { project: LabProject; index: number; total: number; part: Part }) {
+type CrystalProps = { project: LabProject; index: number; total: number; part: Part; filter: string | null }
+
+function Crystal({ project, index, total, part, filter }: CrystalProps) {
   const group = useRef<Group>(null)
   const gem = useRef<ShaderMesh>(null)
   const ring = useRef<ShaderMesh>(null)
@@ -79,6 +82,8 @@ function Crystal({ project, index, total, part }: { project: LabProject; index: 
   const focusProject = useLab((s) => s.focusProject)
   const hover = useRef({ value: 0 })
   const base = useMemo(() => crystalPosition(index, total, new Vector3()), [index, total])
+  // A skill filter lights the crystals built with it and sinks the rest.
+  const match = filter === null ? 0 : project.stack.includes(filter) ? 1 : -1
 
   useFrame((state, delta) => {
     const g = group.current
@@ -86,13 +91,14 @@ function Crystal({ project, index, total, part }: { project: LabProject; index: 
     const ringUniforms = ring.current?.material.uniforms
     if (!g || !gemUniforms || !ringUniforms) return
     const t = state.clock.elapsedTime
-    const lift = Math.max(hover.current.value, focused ? 1 : 0)
-    easing.damp(gemUniforms.uGlow, "value", lift, 0.2, delta)
-    const glow = gemUniforms.uGlow.value as number
+    const lift = Math.max(hover.current.value, focused ? 1 : 0, match > 0 ? 0.55 : 0)
+    easing.damp(gemUniforms.uGlow, "value", match < 0 && !focused ? -0.6 : lift, 0.2, delta)
+    const glow = Math.max(gemUniforms.uGlow.value as number, 0)
     gemUniforms.uTime.value = t
     ringUniforms.uTime.value = t
     ringUniforms.uActive.value = glow
-    g.position.set(base.x, base.y + Math.sin(t * 1.1 + index) * 0.15 + glow * 0.6, base.z + glow * 0.9)
+    const sink = match < 0 && !focused ? -0.9 : 0
+    g.position.set(base.x, base.y + Math.sin(t * 1.1 + index) * 0.15 + glow * 0.6 + sink, base.z + glow * 0.9)
     g.rotation.y += delta * (0.4 + glow * 1.6)
   })
 
@@ -100,14 +106,15 @@ function Crystal({ project, index, total, part }: { project: LabProject; index: 
     e.stopPropagation()
     hover.current.value = 1
     audio.play("tick")
-    document.body.style.cursor = "pointer"
+    look.hovering = true
   }
   const out = () => {
     hover.current.value = 0
-    document.body.style.cursor = ""
+    look.hovering = false
   }
   const click = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation()
+    if (wasDrag()) return
     focusProject(focused ? null : project.slug)
     audio.play(focused ? "tick" : "chime")
   }
@@ -132,8 +139,10 @@ function Crystal({ project, index, total, part }: { project: LabProject; index: 
   )
 }
 
-export function DatabaseVault({ projects }: { projects: LabProject[] }) {
+export function DatabaseVault({ projects, skills }: { projects: LabProject[]; skills: Skill[] }) {
   const parts = useParts("vault", NODES)
+  const filterId = useLab((s) => s.skillFilter)
+  const filter = skills.find((s) => s.id === filterId)?.name ?? null
   const palette = usePalette(EMERALD, 2.4)
   const ring = useRef<Group>(null)
 
@@ -165,7 +174,7 @@ export function DatabaseVault({ projects }: { projects: LabProject[] }) {
       </group>
       <pointLight color={EMERALD} intensity={40} distance={22} decay={1.8} position={[ANCHORS.vault.x, 7, ANCHORS.vault.z + 2]} />
       {projects.map((project, i) => (
-        <Crystal key={project.slug} project={project} index={i} total={projects.length} part={parts.Crystal[0]} />
+        <Crystal key={project.slug} project={project} index={i} total={projects.length} part={parts.Crystal[0]} filter={filter} />
       ))}
     </group>
   )

@@ -1,7 +1,7 @@
 import { HeroTitle } from "@/components/lab/hero-title"
-import { LabShell } from "@/components/lab/lab-shell"
 import { ProjectList } from "@/components/lab/project-list"
 import { Reveal } from "@/components/lab/reveal"
+import { SetScene } from "@/components/lab/set-scene"
 import { SkillList } from "@/components/lab/skill-list"
 import { experiences, profile, projects, skills } from "@/content/lab/mock"
 
@@ -14,7 +14,8 @@ const eyebrow = "font-mono text-[11px] tracking-[0.3em] uppercase"
  */
 export default function LabPage() {
   return (
-    <LabShell skills={skills} experiences={experiences} projects={projects}>
+    <>
+      <SetScene scene={{ kind: "journey" }} />
       <main id="lab-track" className="pointer-events-none">
         <section id="client" aria-labelledby="client-title" className="relative h-[150svh]">
           <div className="sticky top-0 flex h-svh items-end px-6 pb-24 md:items-center md:px-16 md:pb-0">
@@ -69,7 +70,7 @@ export default function LabPage() {
                 Skills & experience
               </h2>
               <div className="mt-5">
-                <SkillList skills={skills} />
+                <SkillList skills={skills} projects={projects} />
               </div>
               <h3 className="mt-6 font-mono text-xs tracking-widest text-slate-500 uppercase">Job queue</h3>
               <ol className="mt-3 space-y-3">
@@ -95,7 +96,7 @@ export default function LabPage() {
                 Selected projects
               </h2>
               <div className="mt-5">
-                <ProjectList projects={projects} />
+                <ProjectList projects={projects} skills={skills} />
               </div>
             </Reveal>
           </div>
@@ -105,6 +106,6 @@ export default function LabPage() {
       <footer className="relative z-10 border-t border-white/10 bg-[#05070D] px-6 py-10 font-mono text-xs text-slate-500 md:px-16">
         Prototype · The Request · next stations: Gateway, Cache Archive, Response Highway.
       </footer>
-    </LabShell>
+    </>
   )
 }

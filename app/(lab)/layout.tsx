@@ -2,6 +2,10 @@ import type { Metadata } from "next"
 import { JetBrains_Mono, Space_Grotesk } from "next/font/google"
 import type { ReactNode } from "react"
 
+import { LabShell } from "@/components/lab/lab-shell"
+import { experiences, projects, skills } from "@/content/lab/mock"
+import { allProjects } from "@/content/lab/projects"
+
 const display = Space_Grotesk({ variable: "--font-sans", subsets: ["latin"] })
 const mono = JetBrains_Mono({ variable: "--font-lab-mono", subsets: ["latin"] })
 
@@ -15,7 +19,9 @@ export default function LabLayout({ children }: { children: ReactNode }) {
   // `font-mono` is inlined by the global theme, so the lab font is applied by descendant selector.
   return (
     <div className={`${display.variable} ${mono.variable} dark flex-1 font-sans [&_.font-mono]:[font-family:var(--font-lab-mono)]`}>
-      {children}
+      <LabShell skills={skills} experiences={experiences} projects={projects} archive={allProjects}>
+        {children}
+      </LabShell>
     </div>
   )
 }
