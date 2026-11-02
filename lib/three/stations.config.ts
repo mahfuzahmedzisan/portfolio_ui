@@ -1,6 +1,6 @@
 import { CatmullRomCurve3, Color, Vector3 } from "three"
 
-export type StationId = "client" | "tunnel" | "engine" | "log" | "vault"
+export type StationId = "client" | "tunnel" | "engine" | "experience" | "vault"
 
 export type Station = {
   id: StationId
@@ -18,7 +18,7 @@ export const STATIONS: Station[] = [
   { id: "client", index: 0, label: "Browser City", code: "GET /mahfuz-ahmed", accent: "#22D3EE", fog: 0.018, stop: 0 },
   { id: "tunnel", index: 1, label: "Fiber Tunnel", code: "DNS / TLS / 38ms", accent: "#A5F3FC", fog: 0.03, stop: 3 },
   { id: "engine", index: 2, label: "Laravel Engine", code: "POST /api/v1/skills", accent: "#FF2D20", fog: 0.022, stop: 5 },
-  { id: "log", index: 3, label: "Service Log", code: "GET /experience", accent: "#F59E0B", fog: 0.024, stop: 8 },
+  { id: "experience", index: 3, label: "Experience", code: "GET /experience", accent: "#FBBF24", fog: 0.024, stop: 8 },
   { id: "vault", index: 4, label: "Database Vault", code: "SELECT * FROM projects", accent: "#34D399", fog: 0.026, stop: 11 },
 ]
 
@@ -27,7 +27,7 @@ export const ANCHORS = {
   client: new Vector3(0, 0, 0),
   tunnel: { start: -22, end: -74, radius: 4 },
   engine: new Vector3(0, 5, -100),
-  log: new Vector3(0, 0, -176),
+  experience: new Vector3(0, 0, -176),
   vault: new Vector3(0, 0, -236),
 } as const
 
@@ -40,7 +40,7 @@ const CAMERA_POINTS: [number, number, number][] = [
   [10, 8, -86],
   [8, 7.2, -104],
   [0, 5.5, -136],
-  [-7.5, 5.4, -156],
+  [1.5, 2.6, -164],
   [-2, 4.2, -200],
   [2, 4.5, -214],
   [1, 4.6, -220],
@@ -55,7 +55,7 @@ const TARGET_POINTS: [number, number, number][] = [
   [-4, 5, -97],
   [-3, 5, -100],
   [1, 3.5, -160],
-  [6, 5.2, -176],
+  [2.0, 0.95, -176],
   [0, 3, -220],
   [-2, 3.3, -222],
   [-4.5, 3.4, -236],

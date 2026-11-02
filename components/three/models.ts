@@ -21,6 +21,7 @@ export const MODEL_URLS = {
   engine: "/3d/models/engine.glb",
   vault: "/3d/models/vault.glb",
   skills: "/3d/models/skills.glb",
+  experience: "/3d/models/experience.glb",
 } as const
 
 export type ModelName = keyof typeof MODEL_URLS

@@ -11,9 +11,10 @@ import type { LabProject } from "@/content/lab/projects"
 import { detectCapability } from "@/lib/three/quality"
 import { useLab } from "@/lib/three/store"
 
-import { BootScreen } from "./boot-screen"
 import { CommandPalette } from "./command-palette"
+import { FloatingNav } from "./floating-nav"
 import { InspectHud } from "./inspect-hud"
+import { Intro } from "./intro"
 import { PosterBackdrop } from "./poster-backdrop"
 import { StationRail } from "./station-rail"
 
@@ -99,8 +100,9 @@ export function LabShell({ children, archive, ...data }: ExperienceProps & { arc
     <div className="relative isolate min-h-svh bg-[#05070D] text-slate-100" data-render-mode={mode}>
       {mode === "webgl" ? <Experience {...data} debug={debug} /> : null}
       {mode === "fallback" ? <PosterBackdrop /> : null}
-      {mode === "webgl" ? <BootScreen /> : null}
+      {mode === "webgl" ? <Intro /> : null}
       <StationRail />
+      <FloatingNav />
       {mode === "webgl" ? <InspectHud /> : null}
       <CommandPalette projects={archive} />
       {debug ? <DebugTools /> : null}

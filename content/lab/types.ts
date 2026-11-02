@@ -37,4 +37,6 @@ export type Experience = {
   company: string
   period: string
   summary: string
+  /** Accent for the station object and the timeline mark. */
+  color: string
 }

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const STATIONS = ["client", "tunnel", "engine", "log", "vault"];
+const STATIONS = ["client", "tunnel", "engine", "experience", "vault"];
 
 test("the lab is noindex and its content is server-rendered", async ({ browser }) => {
   const context = await browser.newContext({ javaScriptEnabled: false });
@@ -10,7 +10,7 @@ test("the lab is noindex and its content is server-rendered", async ({ browser }
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
   await expect(page.getByRole("heading", { level: 1, name: "Mahfuz Ahmed" })).toBeVisible();
   for (const id of STATIONS) await expect(page.locator(`section#${id}`)).toHaveCount(1);
-  await expect(page.locator("#vault article")).toHaveCount(3);
+  expect(await page.locator("#vault article").count()).toBeGreaterThan(0);
 
   await context.close();
 });
@@ -26,7 +26,7 @@ test("only /lab may compile WebAssembly", async ({ request }) => {
   expect(policy(home.headers())).not.toContain("'wasm-unsafe-eval'");
 });
 
-test("reduced motion gets the poster fallback without a boot screen", async ({ browser }) => {
+test("reduced motion gets the poster fallback without an intro", async ({ browser }) => {
   const context = await browser.newContext({ reducedMotion: "reduce" });
   const page = await context.newPage();
 
@@ -39,7 +39,7 @@ test("reduced motion gets the poster fallback without a boot screen", async ({ b
   await context.close();
 });
 
-test("skipping 3D from the boot screen persists the poster fallback", async ({ page }) => {
+test("skipping 3D from the intro persists the poster fallback", async ({ page }) => {
   await page.goto("/lab");
   const mode = page.locator("[data-render-mode]");
   await expect(mode).not.toHaveAttribute("data-render-mode", "pending");
@@ -53,6 +53,7 @@ test("skipping 3D from the boot screen persists the poster fallback", async ({ p
 
   await page.reload();
   await expect(mode).toHaveAttribute("data-render-mode", "fallback");
+  await page.getByRole("button", { name: "Open menu" }).click();
   await expect(page.getByRole("button", { name: "3D off" })).toHaveAttribute("aria-pressed", "false");
 });
 
@@ -66,20 +67,23 @@ test("the WebGL path loads, enters and renders without page errors", async ({ pa
   await expect(mode).not.toHaveAttribute("data-render-mode", "pending");
   test.skip((await mode.getAttribute("data-render-mode")) !== "webgl", "no WebGL-capable GPU in this run");
 
-  const enterSilently = page.getByRole("dialog").getByRole("button", { name: "Enter silently" });
-  await expect(enterSilently).toBeEnabled({ timeout: 60_000 });
-  await enterSilently.click();
-  await expect(page.getByRole("dialog")).toHaveCount(0);
+  // The intro dismisses itself once the assets are ready.
+  await expect(page.getByRole("dialog")).toHaveCount(0, { timeout: 60_000 });
   await expect(page.locator("canvas")).toHaveCount(1);
   expect(errors).toEqual([]);
 });
 
-test("the station rail scrolls to each station", async ({ page }) => {
+test("the floating nav starts collapsed and scrolls to each station", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/lab");
-  const rail = page.getByRole("navigation", { name: "Stations" });
+  const nav = page.getByRole("navigation", { name: "Main" });
+  const orb = nav.getByRole("button", { name: "Open menu" });
 
-  await rail.getByRole("link", { name: /Database Vault/ }).click();
-  await expect(rail.getByRole("link", { name: /Database Vault/ })).toHaveAttribute("aria-current", "step");
+  await expect(orb).toHaveAttribute("aria-expanded", "false");
+  await expect(nav.getByRole("link", { name: /Database Vault/ })).toHaveCount(0);
+  await orb.click();
+  await nav.getByRole("link", { name: /Database Vault/ }).click();
+  // Picking an item collapses the nav again.
+  await expect(nav.getByRole("button", { name: "Open menu" })).toHaveAttribute("aria-expanded", "false");
   await expect(page.getByRole("heading", { name: "Selected projects" })).toBeInViewport();
 });

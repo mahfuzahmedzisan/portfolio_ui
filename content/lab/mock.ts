@@ -31,9 +31,9 @@ export const skills: Skill[] = [
 ]
 
 export const experiences: Experience[] = [
-  { id: 1, role: "Full-Stack Developer", company: "Freelance", period: "2024 - Now", summary: "Next.js + Laravel products for clients, end to end." },
-  { id: 2, role: "Backend Developer", company: "Product Studio", period: "2022 - 2024", summary: "APIs, queues and admin tooling in Laravel." },
-  { id: 3, role: "Frontend Developer", company: "Agency", period: "2020 - 2022", summary: "Marketing sites and dashboards in React." },
+  { id: 1, role: "Software Developer", company: "Maktech", period: "2026 Jan – Now", summary: "", color: "#FF8B7A" },
+  { id: 2, role: "Jr. Software Developer", company: "Maktech", period: "2025 Feb – 2025 December", summary: "", color: "#FFC14D" },
+  { id: 3, role: "Industrial Attachment", company: "European IT", period: "2024 May – August", summary: "", color: "#7EE0FF" },
 ]
 
 /** The vault holds the featured projects; the archive holds all of them. */

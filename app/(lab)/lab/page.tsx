@@ -76,11 +76,11 @@ export default function LabPage() {
           </div>
         </section>
 
-        <section id="log" aria-labelledby="log-title" className="relative h-[150svh]">
+        <section id="experience" aria-labelledby="experience-title" className="relative h-[150svh]">
           <div className="sticky top-0 flex h-svh items-end px-6 pb-24 md:items-center md:justify-end md:pr-36 md:pl-16 md:pb-0">
             <Reveal className={panel}>
-              <p className={`${eyebrow} text-amber-300`}>04 · Service Log · GET /experience</p>
-              <h2 id="log-title" className="mt-3 text-3xl font-semibold text-white">
+              <p className={`${eyebrow} text-amber-300`}>04 · Experience · GET /experience</p>
+              <h2 id="experience-title" className="mt-3 text-3xl font-semibold text-white">
                 Experience
               </h2>
               <ol className="mt-6 border-l border-amber-300/30">
@@ -88,13 +88,15 @@ export default function LabPage() {
                   <li key={xp.id} className="relative pb-6 pl-5 last:pb-0">
                     <span
                       aria-hidden
-                      className="absolute top-1.5 -left-[5px] size-2.5 rounded-full bg-amber-300"
-                      style={i === 0 ? { boxShadow: "0 0 12px #F59E0B" } : { opacity: 0.45 }}
+                      className="absolute top-1.5 -left-[5px] size-2.5 rounded-full"
+                      style={{ background: xp.color, boxShadow: `0 0 12px ${xp.color}`, opacity: i === 0 ? 1 : 0.7 }}
                     />
-                    <p className="font-mono text-[11px] tracking-wider text-amber-200/80 uppercase">{xp.period}</p>
+                    <p className="font-mono text-[11px] tracking-wider uppercase" style={{ color: xp.color }}>
+                      {xp.period}
+                    </p>
                     <p className="mt-1 text-sm text-white">{xp.role}</p>
-                    <p className="font-mono text-[11px] text-slate-500">{xp.company}</p>
-                    <p className="mt-1 text-sm text-slate-400">{xp.summary}</p>
+                    <p className="font-mono text-[11px] text-slate-400">{xp.company}</p>
+                    {xp.summary ? <p className="mt-1 text-sm text-slate-400">{xp.summary}</p> : null}
                   </li>
                 ))}
               </ol>

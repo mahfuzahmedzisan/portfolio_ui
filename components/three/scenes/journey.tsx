@@ -21,7 +21,7 @@ import { BrowserCity } from "../stations/browser-city"
 import { DatabaseVault } from "../stations/db-vault"
 import { EngineCore } from "../stations/engine-core"
 import { FiberTunnel } from "../stations/fiber-tunnel"
-import { ServiceLog } from "../stations/service-log"
+import { ExperienceRow } from "../stations/experience-row"
 
 export type JourneyData = { skills: Skill[]; experiences: Experience[]; projects: LabProject[] }
 
@@ -93,7 +93,7 @@ export function JourneyScene({ skills, experiences, projects }: JourneyData) {
       <BrowserCity />
       <FiberTunnel />
       <EngineCore skills={skills} />
-      <ServiceLog experiences={experiences} />
+      <ExperienceRow experiences={experiences} />
       <DatabaseVault projects={projects} skills={skills} />
       <Packet />
       <PacketFormation />

@@ -15,7 +15,7 @@ const AMBIENT_MIX: Record<StationId, { volume: number; rate: number }> = {
   client: { volume: 0.18, rate: 0.82 },
   tunnel: { volume: 0.24, rate: 1.12 },
   engine: { volume: 0.4, rate: 1 },
-  log: { volume: 0.2, rate: 0.94 },
+  experience: { volume: 0.2, rate: 0.94 },
   vault: { volume: 0.22, rate: 0.9 },
 }
 
