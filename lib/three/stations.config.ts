@@ -1,6 +1,6 @@
 import { CatmullRomCurve3, Color, Vector3 } from "three"
 
-export type StationId = "client" | "tunnel" | "engine" | "vault"
+export type StationId = "client" | "tunnel" | "engine" | "log" | "vault"
 
 export type Station = {
   id: StationId
@@ -18,7 +18,8 @@ export const STATIONS: Station[] = [
   { id: "client", index: 0, label: "Browser City", code: "GET /mahfuz-ahmed", accent: "#22D3EE", fog: 0.018, stop: 0 },
   { id: "tunnel", index: 1, label: "Fiber Tunnel", code: "DNS / TLS / 38ms", accent: "#A5F3FC", fog: 0.03, stop: 3 },
   { id: "engine", index: 2, label: "Laravel Engine", code: "POST /api/v1/skills", accent: "#FF2D20", fog: 0.022, stop: 5 },
-  { id: "vault", index: 3, label: "Database Vault", code: "SELECT * FROM projects", accent: "#34D399", fog: 0.026, stop: 7 },
+  { id: "log", index: 3, label: "Service Log", code: "GET /experience", accent: "#F59E0B", fog: 0.024, stop: 8 },
+  { id: "vault", index: 4, label: "Database Vault", code: "SELECT * FROM projects", accent: "#34D399", fog: 0.026, stop: 11 },
 ]
 
 /** World anchors used by the station components (three.js units, -Z is forward). */
@@ -26,7 +27,8 @@ export const ANCHORS = {
   client: new Vector3(0, 0, 0),
   tunnel: { start: -22, end: -74, radius: 4 },
   engine: new Vector3(0, 5, -100),
-  vault: new Vector3(0, 0, -146),
+  log: new Vector3(0, 0, -176),
+  vault: new Vector3(0, 0, -236),
 } as const
 
 const CAMERA_POINTS: [number, number, number][] = [
@@ -36,8 +38,12 @@ const CAMERA_POINTS: [number, number, number][] = [
   [0, 4, -40],
   [0, 4.4, -72],
   [10, 8, -86],
-  [5, 4.5, -114],
-  [1, 4.6, -131],
+  [8, 7.2, -104],
+  [0, 5.5, -136],
+  [-7.5, 5.4, -156],
+  [-2, 4.2, -200],
+  [2, 4.5, -214],
+  [1, 4.6, -220],
 ]
 
 const TARGET_POINTS: [number, number, number][] = [
@@ -47,8 +53,12 @@ const TARGET_POINTS: [number, number, number][] = [
   [0, 4, -56],
   [0, 4.6, -88],
   [-4, 5, -97],
-  [0, 3.8, -130],
-  [-4.5, 3.4, -146],
+  [-3, 5, -100],
+  [1, 3.5, -160],
+  [6, 5.2, -176],
+  [0, 3, -220],
+  [-2, 3.3, -222],
+  [-4.5, 3.4, -236],
 ]
 
 const toCurve = (points: [number, number, number][]) =>
@@ -77,7 +87,7 @@ export function progressToT(progress: number): number {
   return stopT[i] + (stopT[i + 1] - stopT[i]) * frac
 }
 
-/** Continuous station position (0 = client, 3 = vault) for blending accents and fog. */
+/** Continuous station position (0 = first station) for blending accents and fog. */
 export function progressToStationFloat(progress: number): number {
   return Math.min(Math.max(progress, 0), 1) * (STATIONS.length - 1)
 }

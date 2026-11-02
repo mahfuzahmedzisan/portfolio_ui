@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const STATIONS = ["client", "tunnel", "engine", "vault"];
+const STATIONS = ["client", "tunnel", "engine", "log", "vault"];
 
 test("the lab is noindex and its content is server-rendered", async ({ browser }) => {
   const context = await browser.newContext({ javaScriptEnabled: false });

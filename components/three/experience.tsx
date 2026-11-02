@@ -83,7 +83,7 @@ export default function Experience({ skills, experiences, projects, debug = fals
       <Canvas
         dpr={quality.dpr}
         gl={{ antialias: false, powerPreference: "high-performance", stencil: false }}
-        camera={{ fov: 48, near: 0.1, far: 240, position: [0, 8, 30] }}
+        camera={{ fov: 48, near: 0.1, far: 320, position: [0, 8, 30] }}
       >
         <color attach="background" args={[BACKGROUND]} />
         <fogExp2 attach="fog" args={[BACKGROUND, 0.02]} />

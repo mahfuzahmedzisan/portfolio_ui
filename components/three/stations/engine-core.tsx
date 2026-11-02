@@ -1,62 +1,21 @@
 "use client"
 
-import { Billboard, Text } from "@react-three/drei"
 import { useFrame } from "@react-three/fiber"
 import { useMemo, useRef } from "react"
 import { Color, type Group, type Mesh, type PointLight, type ShaderMaterial } from "three"
 
-import type { Experience, Skill } from "@/content/lab/mock"
+import type { Skill } from "@/content/lab/mock"
 import { ANCHORS } from "@/lib/three/stations.config"
 
 import { Parts } from "../instanced-parts"
-import { neonMaterial, type Part, usePalette, useParts } from "../models"
+import { neonMaterial, usePalette, useParts } from "../models"
 import { createHologramMaterial } from "../shaders/hologram"
-import { DISPLAY_FONT } from "./browser-city"
 import { SkillOrbits } from "./skill-artifacts"
 
-const NODES = ["Core", "Ring_1", "Ring_2", "Ring_3", "Skill_Pod", "Conveyor", "Crate"] as const
+const NODES = ["Core", "Ring_1", "Ring_2", "Ring_3", "Skill_Pod"] as const
 const LARAVEL = "#FF2D20"
-const BELT_LENGTH = 14
 
-type EngineParts = Record<(typeof NODES)[number], Part[]>
-
-function Conveyor({ experiences, parts }: { experiences: Experience[]; parts: EngineParts }) {
-  const palette = usePalette(LARAVEL, 2.4)
-  const crates = useRef<(Group | null)[]>([])
-  const labels = useRef<(Group | null)[]>([])
-  const items = useMemo(() => [...experiences, ...experiences], [experiences])
-
-  useFrame((state) => {
-    const offset = (state.clock.elapsedTime * 0.8) % BELT_LENGTH
-    crates.current.forEach((crate, i) => {
-      if (!crate) return
-      const x = ((i * BELT_LENGTH) / items.length + offset) % BELT_LENGTH - BELT_LENGTH / 2
-      crate.position.x = x
-      const edge = 1 - Math.min(Math.abs(x) / (BELT_LENGTH / 2), 1)
-      crate.scale.setScalar(Math.min(edge * 5, 1))
-      labels.current[i]?.scale.setScalar(Math.max(0, 1 - Math.abs(x) / 2.4))
-    })
-  })
-
-  return (
-    <group position={[-1, -4.6, -8]} rotation={[0, 0.5, 0]}>
-      <Parts parts={parts.Conveyor} palette={palette} />
-      {items.map((xp, i) => (
-        <group key={`${xp.id}-${i}`} ref={(el) => void (crates.current[i] = el)} position={[0, 0.1, 0]}>
-          <Parts parts={parts.Crate} palette={palette} />
-          <Billboard ref={(el) => void (labels.current[i] = el)} position={[0, 1.35, 0]}>
-            <Text font={DISPLAY_FONT} fontSize={0.42} anchorX="center" anchorY="bottom" maxWidth={3}>
-              {`${xp.role}\n${xp.period}`}
-              <meshBasicMaterial color={[1.6, 1.5, 1.5]} toneMapped={false} />
-            </Text>
-          </Billboard>
-        </group>
-      ))}
-    </group>
-  )
-}
-
-export function EngineCore({ skills, experiences }: { skills: Skill[]; experiences: Experience[] }) {
+export function EngineCore({ skills }: { skills: Skill[] }) {
   const parts = useParts("engine", NODES)
   const ringPalette = usePalette(LARAVEL, 1.8)
   const coreMaterial = useMemo(() => neonMaterial(LARAVEL, 1.6), [])
@@ -98,7 +57,6 @@ export function EngineCore({ skills, experiences }: { skills: Skill[]; experienc
       ))}
       <pointLight ref={light} color={LARAVEL} distance={34} decay={1.6} />
       <SkillOrbits skills={skills} pod={parts.Skill_Pod} />
-      <Conveyor experiences={experiences} parts={parts} />
     </group>
   )
 }

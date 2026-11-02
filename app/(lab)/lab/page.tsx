@@ -65,21 +65,35 @@ export default function LabPage() {
         <section id="engine" aria-labelledby="engine-title" className="relative h-[150svh]">
           <div className="sticky top-0 flex h-svh items-end px-6 pb-24 md:items-center md:px-16 md:pb-0">
             <Reveal className={panel}>
-              <p className={`${eyebrow} text-[#FF6A5F]`}>03 · Laravel Engine · services</p>
+              <p className={`${eyebrow} text-[#FF6A5F]`}>03 · Laravel Engine · skills</p>
               <h2 id="engine-title" className="mt-3 text-3xl font-semibold text-white">
-                Skills & experience
+                Skills
               </h2>
               <div className="mt-5">
                 <SkillList skills={skills} projects={projects} />
               </div>
-              <h3 className="mt-6 font-mono text-xs tracking-widest text-slate-500 uppercase">Job queue</h3>
-              <ol className="mt-3 space-y-3">
-                {experiences.map((xp) => (
-                  <li key={xp.id} className="border-l border-[#FF2D20]/50 pl-3">
-                    <p className="text-sm text-white">
-                      {xp.role} <span className="text-slate-500">@ {xp.company}</span>
-                    </p>
-                    <p className="font-mono text-[11px] text-slate-500">{xp.period}</p>
+            </Reveal>
+          </div>
+        </section>
+
+        <section id="log" aria-labelledby="log-title" className="relative h-[150svh]">
+          <div className="sticky top-0 flex h-svh items-end px-6 pb-24 md:items-center md:justify-end md:pr-36 md:pl-16 md:pb-0">
+            <Reveal className={panel}>
+              <p className={`${eyebrow} text-amber-300`}>04 · Service Log · GET /experience</p>
+              <h2 id="log-title" className="mt-3 text-3xl font-semibold text-white">
+                Experience
+              </h2>
+              <ol className="mt-6 border-l border-amber-300/30">
+                {experiences.map((xp, i) => (
+                  <li key={xp.id} className="relative pb-6 pl-5 last:pb-0">
+                    <span
+                      aria-hidden
+                      className="absolute top-1.5 -left-[5px] size-2.5 rounded-full bg-amber-300"
+                      style={i === 0 ? { boxShadow: "0 0 12px #F59E0B" } : { opacity: 0.45 }}
+                    />
+                    <p className="font-mono text-[11px] tracking-wider text-amber-200/80 uppercase">{xp.period}</p>
+                    <p className="mt-1 text-sm text-white">{xp.role}</p>
+                    <p className="font-mono text-[11px] text-slate-500">{xp.company}</p>
                     <p className="mt-1 text-sm text-slate-400">{xp.summary}</p>
                   </li>
                 ))}
@@ -91,7 +105,7 @@ export default function LabPage() {
         <section id="vault" aria-labelledby="vault-title" className="relative h-svh">
           <div className="flex h-svh items-end px-6 pb-24 md:items-center md:px-16 md:pb-0">
             <Reveal className={panel}>
-              <p className={`${eyebrow} text-emerald-300`}>04 · Database Vault · SELECT * FROM projects</p>
+              <p className={`${eyebrow} text-emerald-300`}>05 · Database Vault · SELECT * FROM projects</p>
               <h2 id="vault-title" className="mt-3 text-3xl font-semibold text-white">
                 Selected projects
               </h2>

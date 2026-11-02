@@ -21,6 +21,7 @@ import { BrowserCity } from "../stations/browser-city"
 import { DatabaseVault } from "../stations/db-vault"
 import { EngineCore } from "../stations/engine-core"
 import { FiberTunnel } from "../stations/fiber-tunnel"
+import { ServiceLog } from "../stations/service-log"
 
 export type JourneyData = { skills: Skill[]; experiences: Experience[]; projects: LabProject[] }
 
@@ -42,11 +43,11 @@ function GridFloor() {
 
   return (
     <>
-      <mesh ref={grid} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, -70]} material={material}>
-        <planeGeometry args={[160, 280]} />
+      <mesh ref={grid} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, -100]} material={material}>
+        <planeGeometry args={[160, 360]} />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, -70]}>
-        <planeGeometry args={[160, 280]} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, -100]}>
+        <planeGeometry args={[160, 360]} />
         <meshStandardMaterial color="#03050a" metalness={0.9} roughness={0.32} />
       </mesh>
     </>
@@ -63,7 +64,7 @@ function AmbientDust({ count }: { count: number }) {
     for (let i = 0; i < count; i++) {
       positions[i * 3] = (random() - 0.5) * 44
       positions[i * 3 + 1] = random() * 16
-      positions[i * 3 + 2] = 30 - random() * 200
+      positions[i * 3 + 2] = 30 - random() * 310
       seeds[i] = random()
     }
     const g = new BufferGeometry()
@@ -91,7 +92,8 @@ export function JourneyScene({ skills, experiences, projects }: JourneyData) {
       <AmbientDust count={QUALITY[tier].particles} />
       <BrowserCity />
       <FiberTunnel />
-      <EngineCore skills={skills} experiences={experiences} />
+      <EngineCore skills={skills} />
+      <ServiceLog experiences={experiences} />
       <DatabaseVault projects={projects} skills={skills} />
       <Packet />
       <PacketFormation />
