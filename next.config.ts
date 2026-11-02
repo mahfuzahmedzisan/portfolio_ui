@@ -32,7 +32,13 @@ const nextConfig: NextConfig = {
     }));
   },
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders() }];
+    // Matching sources would each send a CSP and browsers enforce the intersection,
+    // so /lab is excluded from the default rule rather than layered on top of it.
+    return [
+      { source: "/((?!lab$|lab/).*)", headers: securityHeaders() },
+      { source: "/lab", headers: securityHeaders({ wasm: true }) },
+      { source: "/lab/:path*", headers: securityHeaders({ wasm: true }) },
+    ];
   },
 };
 

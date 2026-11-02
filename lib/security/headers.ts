@@ -46,7 +46,12 @@ export function cspEnforced(): boolean {
   return process.env.CSP_MODE === "enforce";
 }
 
-export function buildCsp(): string {
+export type CspOptions = {
+  /** Allows WebAssembly compilation (the Meshopt glTF decoder) without allowing eval(). */
+  wasm?: boolean;
+};
+
+export function buildCsp({ wasm = false }: CspOptions = {}): string {
   const dev = process.env.NODE_ENV === "development";
   const preview = process.env.VERCEL_ENV === "preview";
   const https = process.env.NEXT_PUBLIC_SITE_URL?.startsWith("https://") ?? false;
@@ -55,7 +60,13 @@ export function buildCsp(): string {
 
   const directives: Record<string, string[]> = {
     "default-src": ["'self'"],
-    "script-src": ["'self'", "'unsafe-inline'", ...(dev ? ["'unsafe-eval'"] : []), ...toolbar],
+    "script-src": [
+      "'self'",
+      "'unsafe-inline'",
+      ...(dev ? ["'unsafe-eval'"] : []),
+      ...(wasm ? ["'wasm-unsafe-eval'"] : []),
+      ...toolbar,
+    ],
     "style-src": ["'self'", "'unsafe-inline'", ...toolbar],
     "img-src": ["'self'", "data:", "blob:", ...(preview ? ["https://vercel.live", "https://vercel.com"] : [])],
     "font-src": ["'self'", "data:", ...(preview ? ["https://vercel.live", "https://assets.vercel.com"] : [])],
@@ -87,13 +98,13 @@ export function buildCsp(): string {
     .join("; ");
 }
 
-export function securityHeaders(): Header[] {
+export function securityHeaders(options: CspOptions = {}): Header[] {
   const sentry = sentryEndpoints();
 
   return [
     {
       key: cspEnforced() ? "Content-Security-Policy" : "Content-Security-Policy-Report-Only",
-      value: buildCsp(),
+      value: buildCsp(options),
     },
     ...(sentry ? [{ key: "Reporting-Endpoints", value: `${REPORT_GROUP}="${sentry.report}"` }] : []),
     // Sent separately because frame-ancestors has no effect while the CSP is Report-Only.
