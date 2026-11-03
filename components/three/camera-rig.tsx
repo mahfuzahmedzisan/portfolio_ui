@@ -2,7 +2,7 @@
 
 import { useFrame } from "@react-three/fiber"
 import { easing } from "maath"
-import { Vector3 } from "three"
+import { MathUtils, Vector3 } from "three"
 
 import type { LabProject } from "@/content/lab/projects"
 import { rig } from "@/lib/three/rig"
@@ -21,6 +21,9 @@ const DIVE_LOOK = new Vector3(-2.2, -0.2, 0)
 const pos = new Vector3()
 const lookAt = new Vector3()
 const crystal = new Vector3()
+const pull = new Vector3()
+
+const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches
 
 /**
  * Scroll-driven spline camera with pointer parallax, a limited drag-to-look offset,
@@ -52,7 +55,20 @@ export function CameraRig({ projects }: { projects: LabProject[] }) {
       applyDragLook(pos, lookAt, state.pointer, dt)
     }
 
+    // Portrait screens see far less width, so back the camera off along its line of sight.
+    if (focusIndex < 0 && state.viewport.aspect < 1) {
+      pull.copy(pos).sub(lookAt).multiplyScalar(MathUtils.clamp(1 / state.viewport.aspect - 1, 0, 0.8) * 0.5)
+      pos.add(pull)
+    }
+
     moveCamera(state.camera, pos, lookAt, focusIndex >= 0, dt)
+
+    // The footer rise rumbles the camera; the damped move above pulls it back every frame.
+    if (rig.shake > 0 && !reducedMotion()) {
+      const amount = rig.shake * 0.09
+      state.camera.position.x += (Math.random() - 0.5) * amount
+      state.camera.position.y += (Math.random() - 0.5) * amount
+    }
   })
 
   return null

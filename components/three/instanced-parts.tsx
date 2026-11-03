@@ -19,7 +19,7 @@ function InstancedPart({ part, matrices, palette }: { part: Part; matrices: Matr
   return (
     <instancedMesh
       ref={ref}
-      args={[part.geometry, palette[part.role], matrices.length]}
+      args={[part.geometry, palette[part.role] ?? palette.Surface, matrices.length]}
       frustumCulled
     />
   )
@@ -42,7 +42,7 @@ export function Parts({ parts, palette }: { parts: Part[]; palette: Palette }) {
   return (
     <>
       {parts.map((part, i) => (
-        <mesh key={i} geometry={part.geometry} material={palette[part.role]} />
+        <mesh key={i} geometry={part.geometry} material={palette[part.role] ?? palette.Surface} />
       ))}
     </>
   )

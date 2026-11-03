@@ -1,65 +1,75 @@
 import { CatmullRomCurve3, Color, Vector3 } from "three"
 
-export type StationId = "client" | "tunnel" | "engine" | "experience" | "vault"
+export type StationId = "client" | "tunnel" | "services" | "vault" | "engine" | "experience" | "contact" | "footer"
 
 export type Station = {
   id: StationId
   index: number
+  /** Name shown in the floating nav. */
   label: string
-  /** The HTTP-flavoured caption shown in the station rail. */
+  /** The HTTP-flavoured caption shown in the status pill. */
   code: string
   accent: string
   fog: number
   /** Control point index on the camera/target splines where this station's camera rests. */
   stop: number
+  /** Still used by the poster fallback (reduced motion, no WebGL, "3D off"). */
+  poster: string
 }
 
+type PathPoint = { camera: [number, number, number]; target: [number, number, number]; station?: StationId }
+
+/**
+ * One camera/target control point per entry, in scroll order. Entries tagged with a station are
+ * where the camera rests for that section; the rest only shape the flight between them.
+ */
+const PATH: PathPoint[] = [
+  { camera: [0, 6.5, 28], target: [0, 4.5, 4], station: "client" },
+  { camera: [0, 5, 12], target: [0, 4, -6] },
+  { camera: [0, 4.2, -8], target: [0, 4, -26] },
+  { camera: [0, 3.4, -37], target: [0.9, 2.3, -52], station: "tunnel" },
+  { camera: [0, 4.4, -72], target: [0, 4.6, -88] },
+  { camera: [1, 4.0, -97], target: [3.6, 2.2, -112], station: "services" },
+  { camera: [-2, 4.2, -134], target: [0, 3, -150] },
+  { camera: [2, 4.5, -148], target: [-2, 3.3, -152] },
+  { camera: [1, 4.6, -154], target: [-4.5, 3.4, -170], station: "vault" },
+  { camera: [0, 5, -190], target: [0, 4.5, -208] },
+  { camera: [10, 8, -226], target: [-4, 5, -237], station: "engine" },
+  { camera: [8, 7.2, -244], target: [-3, 5, -240] },
+  { camera: [0, 5.5, -260], target: [1, 3.5, -284] },
+  { camera: [1.5, 2.6, -288], target: [2, 0.95, -300], station: "experience" },
+  { camera: [-1, 4.4, -322], target: [0, 3, -340] },
+  { camera: [0.5, 3.4, -345], target: [3.2, 1.8, -360], station: "contact" },
+  { camera: [0, 2.5, -384], target: [0, 1.6, -405], station: "footer" },
+]
+
+const stopOf = (id: StationId) => PATH.findIndex((p) => p.station === id)
+
 export const STATIONS: Station[] = [
-  { id: "client", index: 0, label: "Browser City", code: "GET /mahfuz-ahmed", accent: "#22D3EE", fog: 0.018, stop: 0 },
-  { id: "tunnel", index: 1, label: "Fiber Tunnel", code: "DNS / TLS / 38ms", accent: "#A5F3FC", fog: 0.03, stop: 3 },
-  { id: "engine", index: 2, label: "Laravel Engine", code: "POST /api/v1/skills", accent: "#FF2D20", fog: 0.022, stop: 5 },
-  { id: "experience", index: 3, label: "Experience", code: "GET /experience", accent: "#FBBF24", fog: 0.024, stop: 8 },
-  { id: "vault", index: 4, label: "Database Vault", code: "SELECT * FROM projects", accent: "#34D399", fog: 0.026, stop: 11 },
+  { id: "client", index: 0, label: "Home", code: "GET /mahfuz-ahmed", accent: "#22D3EE", fog: 0.018, stop: stopOf("client"), poster: "client" },
+  { id: "tunnel", index: 1, label: "About", code: "DNS / TLS / handshake", accent: "#A5F3FC", fog: 0.03, stop: stopOf("tunnel"), poster: "tunnel" },
+  { id: "services", index: 2, label: "Services", code: "GET /services", accent: "#C084FC", fog: 0.024, stop: stopOf("services"), poster: "vault" },
+  { id: "vault", index: 3, label: "Projects", code: "SELECT * FROM projects", accent: "#34D399", fog: 0.026, stop: stopOf("vault"), poster: "vault" },
+  { id: "engine", index: 4, label: "Skills", code: "POST /api/v1/skills", accent: "#FF2D20", fog: 0.022, stop: stopOf("engine"), poster: "engine" },
+  { id: "experience", index: 5, label: "Experience", code: "GET /experience", accent: "#FBBF24", fog: 0.024, stop: stopOf("experience"), poster: "experience" },
+  { id: "contact", index: 6, label: "Contact", code: "POST /contact", accent: "#F472B6", fog: 0.022, stop: stopOf("contact"), poster: "client" },
+  { id: "footer", index: 7, label: "Footer", code: "200 OK · connection closed", accent: "#22D3EE", fog: 0.02, stop: stopOf("footer"), poster: "client" },
 ]
 
 /** World anchors used by the station components (three.js units, -Z is forward). */
 export const ANCHORS = {
   client: new Vector3(0, 0, 0),
   tunnel: { start: -22, end: -74, radius: 4 },
-  engine: new Vector3(0, 5, -100),
-  experience: new Vector3(0, 0, -176),
-  vault: new Vector3(0, 0, -236),
+  services: new Vector3(0, 0, -112),
+  vault: new Vector3(0, 0, -170),
+  engine: new Vector3(0, 5, -240),
+  experience: new Vector3(0, 0, -300),
+  contact: new Vector3(0, 0, -360),
+  footer: new Vector3(0, 0, -405),
 } as const
 
-const CAMERA_POINTS: [number, number, number][] = [
-  [0, 6.5, 28],
-  [0, 5, 12],
-  [0, 4.2, -8],
-  [0, 4, -40],
-  [0, 4.4, -72],
-  [10, 8, -86],
-  [8, 7.2, -104],
-  [0, 5.5, -136],
-  [1.5, 2.6, -164],
-  [-2, 4.2, -200],
-  [2, 4.5, -214],
-  [1, 4.6, -220],
-]
-
-const TARGET_POINTS: [number, number, number][] = [
-  [0, 4.5, 4],
-  [0, 4, -6],
-  [0, 4, -26],
-  [0, 4, -56],
-  [0, 4.6, -88],
-  [-4, 5, -97],
-  [-3, 5, -100],
-  [1, 3.5, -160],
-  [2.0, 0.95, -176],
-  [0, 3, -220],
-  [-2, 3.3, -222],
-  [-4.5, 3.4, -236],
-]
+/** Length of the whole journey, for floors and dust. */
+export const JOURNEY = { near: 36, far: -430 }
 
 const toCurve = (points: [number, number, number][]) =>
   new CatmullRomCurve3(
@@ -68,10 +78,10 @@ const toCurve = (points: [number, number, number][]) =>
     "centripetal",
   )
 
-export const cameraCurve = toCurve(CAMERA_POINTS)
-export const targetCurve = toCurve(TARGET_POINTS)
+export const cameraCurve = toCurve(PATH.map((p) => p.camera))
+export const targetCurve = toCurve(PATH.map((p) => p.target))
 
-const SEGMENTS = CAMERA_POINTS.length - 1
+const SEGMENTS = PATH.length - 1
 const stopT = STATIONS.map((s) => s.stop / SEGMENTS)
 
 const smoothstep = (x: number) => x * x * (3 - 2 * x)
@@ -96,6 +106,11 @@ export function stationAt(progress: number): Station {
   return STATIONS[Math.round(progressToStationFloat(progress))]
 }
 
+/** Distance, in stations, between `progress` and a station. Drives culling and per-station effects. */
+export function stationDistance(progress: number, id: StationId): number {
+  return Math.abs(progressToStationFloat(progress) - STATIONS.findIndex((s) => s.id === id))
+}
+
 const accentColors = STATIONS.map((s) => new Color(s.accent))
 
 /** Writes the blended station accent for `progress` into `target`. */
@@ -116,6 +131,12 @@ export function crystalPosition(index: number, count: number, target = new Vecto
   // A shallow arc whose wings come forward, so outer crystals don't hide behind the panel.
   const offset = index - (count - 1) / 2
   return target.set(ANCHORS.vault.x + offset * 2.5, ANCHORS.vault.y + 3, ANCHORS.vault.z + Math.abs(offset) * 0.9)
+}
+
+/** Where service card `index` of `count` stands on the services platform. */
+export function servicePosition(index: number, count: number, target = new Vector3()): Vector3 {
+  const offset = index - (count - 1) / 2
+  return target.set(ANCHORS.services.x + 7 + offset * 2.0, 2.6, ANCHORS.services.z + offset * offset * 0.3)
 }
 
 /** Scroll progress at which a station is centred. */

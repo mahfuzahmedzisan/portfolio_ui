@@ -22,6 +22,8 @@ import {
 
 import { SKILL_MODELS, type Skill, type SkillGroup, type SkillModel } from "@/content/lab/types"
 import { look, wasDrag } from "@/lib/three/look"
+import { rig } from "@/lib/three/rig"
+import { stationDistance } from "@/lib/three/stations.config"
 import { useLab } from "@/lib/three/store"
 
 import { audio } from "../audio/audio-manager"
@@ -65,11 +67,16 @@ type RimMaterial = Material & { uniforms: Record<string, IUniform> }
 function useArtifactPalette(color: string) {
   return useMemo(() => {
     const rim = createRimMaterial(color) as unknown as RimMaterial
+    const trim = new MeshStandardMaterial({ color: "#1A2238", metalness: 0.9, roughness: 0.22, envMapIntensity: 1 })
     const palette: Palette = {
       Surface: rim,
-      Trim: new MeshStandardMaterial({ color: "#1A2238", metalness: 0.9, roughness: 0.22, envMapIntensity: 1 }),
+      Trim: trim,
       Neon: neonMaterial(color, 2.2),
       Glass: new MeshStandardMaterial({ color: "#1E3A5F", metalness: 0.1, roughness: 0.05, transparent: true, opacity: 0.35 }),
+      // Skill models never use the character roles.
+      Skin: trim,
+      Hair: trim,
+      Hoodie: trim,
     }
     return { palette, rim }
   }, [color])
@@ -124,18 +131,43 @@ const ANIMATE: Partial<Record<SkillModel, (m: Moving, t: number) => void>> = {
   },
 }
 
-export function ringPosition(ring: Ring, index: number, count: number, time: number, out: Vector3): Vector3 {
-  const a = (index / count) * Math.PI * 2 + time * ring.speed
-  return out.set(Math.cos(a) * ring.radius, 0, Math.sin(a) * ring.radius).applyEuler(ring.tilt).setY(out.y + ring.y)
+export function ringPosition(ring: Ring, index: number, count: number, time: number, out: Vector3, spread = 1): Vector3 {
+  // Artifacts that have not left the core yet also whirl faster, so they unwind as they travel out.
+  const a = (index / count) * Math.PI * 2 + time * ring.speed + (1 - spread) * 5
+  const radius = ring.radius * spread
+  return out.set(Math.cos(a) * radius, 0, Math.sin(a) * radius).applyEuler(ring.tilt).setY(out.y + ring.y * spread)
+}
+
+const ease = (x: number) => {
+  const t = Math.min(Math.max(x, 0), 1)
+  return t * t * (3 - 2 * t)
+}
+
+/**
+ * 0 while the camera is away (every artifact sits in the engine's core), 1 once it arrives and the
+ * rings are fully open. `lag` (0..1) staggers artifacts so they peel off one after another.
+ */
+export function orbitSpread(lag = 0): number {
+  const arrive = 1 - (stationDistance(rig.progress, "engine") - 0.1) / 0.8
+  return ease(arrive * 1.5 - lag * 0.5)
 }
 
 const target = new Vector3()
 const offset = new Vector3()
 const glowOn = new Color()
 
-type SlotProps = { skill: Skill; index: number; count: number; parts: ArtifactParts | null; pod: Part[] }
+type SlotProps = {
+  skill: Skill
+  index: number
+  count: number
+  /** This artifact's position among all skills, for staggering the unfold. */
+  groupOffset: number
+  total: number
+  parts: ArtifactParts | null
+  pod: Part[]
+}
 
-function SkillArtifact({ skill, index, count, parts, pod }: SlotProps) {
+function SkillArtifact({ skill, index, count, groupOffset, total, parts, pod }: SlotProps) {
   const group = useRef<Group>(null)
   const label = useRef<Group>(null)
   const moving = useRef<Moving>({ body: null, a: null, b: null, electrons: [] })
@@ -154,6 +186,7 @@ function SkillArtifact({ skill, index, count, parts, pod }: SlotProps) {
     const { inspectedSkill, hoveredSkill } = useLab.getState()
     const inspected = inspectedSkill === skill.id
     const hovered = hoveredSkill === skill.id
+    const spread = orbitSpread((index + groupOffset) / total)
 
     if (inspected) {
       offset.copy(state.size.width > state.size.height ? INSPECT_WIDE : INSPECT_NARROW).multiplyScalar(look.zoom)
@@ -161,10 +194,11 @@ function SkillArtifact({ skill, index, count, parts, pod }: SlotProps) {
       g.parent.worldToLocal(target.copy(offset))
       easing.damp3(g.position, target, 0.28, delta)
     } else {
-      easing.damp3(g.position, ringPosition(ring, index, count, t, target), 0.3, delta)
+      easing.damp3(g.position, ringPosition(ring, index, count, t, target, spread), 0.3, delta)
     }
 
-    const scale = inspected ? 1.4 : hovered ? 1.3 : inspectedSkill !== null ? 0.75 : 1
+    const grown = 0.25 + 0.75 * spread
+    const scale = (inspected ? 1.4 : hovered ? 1.3 : inspectedSkill !== null ? 0.75 : 1) * (inspected ? 1 : grown)
     easing.damp(g.scale, "x", scale, 0.2, delta)
     g.scale.y = g.scale.z = g.scale.x
 
@@ -243,6 +277,10 @@ function SkillArtifact({ skill, index, count, parts, pod }: SlotProps) {
   )
 }
 
+function setOpacity(material: LineBasicMaterial, value: number) {
+  material.opacity = value
+}
+
 function OrbitPath({ ring }: { ring: Ring }) {
   const line = useMemo(() => {
     const points: number[] = []
@@ -257,6 +295,11 @@ function OrbitPath({ ring }: { ring: Ring }) {
     const material = new LineBasicMaterial({ color: ring.color, transparent: true, opacity: 0.22, toneMapped: false })
     return new LineLoop(geometry, material)
   }, [ring])
+  useFrame(() => {
+    const s = orbitSpread(0.3)
+    line.scale.setScalar(Math.max(s, 0.001))
+    setOpacity(line.material as LineBasicMaterial, 0.22 * s)
+  })
   return <primitive object={line} />
 }
 
@@ -268,10 +311,19 @@ export function SkillOrbits({ skills, pod }: { skills: Skill[]; pod: Part[] }) {
     for (const skill of skills) byGroup.set(skill.group, [...(byGroup.get(skill.group) ?? []), skill])
     return [...byGroup.entries()]
   }, [skills])
+  // Running index of each group's first artifact, so the unfold staggers across all skills.
+  const offsets = useMemo(() => {
+    let n = 0
+    return groups.map(([, members]) => {
+      const start = n
+      n += members.length
+      return start
+    })
+  }, [groups])
 
   return (
     <>
-      {groups.map(([group, members]) => (
+      {groups.map(([group, members], g) => (
         <group key={group}>
           <OrbitPath ring={RINGS[group]} />
           {members.map((skill, i) => (
@@ -280,6 +332,8 @@ export function SkillOrbits({ skills, pod }: { skills: Skill[]; pod: Part[] }) {
               skill={skill}
               index={i}
               count={members.length}
+              groupOffset={offsets[g]}
+              total={skills.length}
               parts={skill.model ? parts[skill.model] : null}
               pod={pod}
             />

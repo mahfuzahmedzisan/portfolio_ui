@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const STATIONS = ["client", "tunnel", "engine", "experience", "vault"];
+const STATIONS = ["client", "tunnel", "services", "vault", "engine", "experience", "contact"];
 
 test("the lab is noindex and its content is server-rendered", async ({ browser }) => {
   const context = await browser.newContext({ javaScriptEnabled: false });
@@ -80,10 +80,31 @@ test("the floating nav starts collapsed and scrolls to each station", async ({ p
   const orb = nav.getByRole("button", { name: "Open menu" });
 
   await expect(orb).toHaveAttribute("aria-expanded", "false");
-  await expect(nav.getByRole("link", { name: /Database Vault/ })).toHaveCount(0);
+  await expect(nav.getByRole("link", { name: "Projects", exact: true })).toHaveCount(0);
   await orb.click();
-  await nav.getByRole("link", { name: /Database Vault/ }).click();
+  await nav.getByRole("link", { name: "Projects", exact: true }).click();
   // Picking an item collapses the nav again.
   await expect(nav.getByRole("button", { name: "Open menu" })).toHaveAttribute("aria-expanded", "false");
   await expect(page.getByRole("heading", { name: "Selected projects" })).toBeInViewport();
+});
+
+test("the contact form validates and the honeypot is hidden", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/lab");
+  const form = page.locator("#contact form");
+  await expect(form.getByRole("button", { name: /Send message/ })).toBeVisible();
+  // Browser validation blocks an empty submit, so nothing is requested.
+  let requested = false;
+  page.on("request", (r) => r.url().includes("/api/contact") && (requested = true));
+  await form.getByRole("button", { name: /Send message/ }).click();
+  expect(requested).toBe(false);
+  // Off-screen and hidden from assistive tech: only bots see the honeypot.
+  await expect(form.locator('[aria-hidden="true"] input[name="company"]')).toHaveCount(1);
+});
+
+test("the contact API rejects untrusted origins and bad payloads", async ({ request }) => {
+  const forbidden = await request.post("/api/contact", { data: {}, headers: { origin: "https://evil.example" } });
+  expect(forbidden.status()).toBe(403);
+  const invalid = await request.post("/api/contact", { data: { name: "x" }, headers: { origin: "http://localhost:3100" } });
+  expect([403, 422]).toContain(invalid.status());
 });

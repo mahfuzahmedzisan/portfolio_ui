@@ -13,6 +13,8 @@ export const rig = {
   velocity: 0,
   /** World position of the packet. */
   packet: new Vector3(),
+  /** Camera shake amplitude 0..1, written by scene effects (the footer rise) and applied by the camera rig. */
+  shake: 0,
   /** World position the camera is focusing on (packet, or a project crystal). */
   focus: new Vector3(),
 }

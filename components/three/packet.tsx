@@ -49,7 +49,10 @@ export function Packet() {
     g.position.y += Math.sin(state.clock.elapsedTime * 1.4) * 0.12
 
     easing.damp(scale.current, "value", useLab.getState().entered ? 1 : 0.0001, 0.6, delta)
-    g.scale.setScalar(scale.current.value)
+    // Gone by the footer: the closing name needs the whole frame.
+    const gone = Math.min(Math.max((rig.progress - 0.84) / 0.08, 0), 1)
+    g.scale.setScalar(scale.current.value * (1 - gone))
+    g.visible = gone < 1
 
     accentAt(rig.progress, accent)
     core.current?.material.color.copy(accent).lerp(WHITE, 0.55).multiplyScalar(3.2)

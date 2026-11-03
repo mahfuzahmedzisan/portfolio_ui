@@ -8,20 +8,23 @@ import { STATIONS } from "@/lib/three/stations.config"
 /** Still renders of each station for reduced motion, low-end GPUs, no WebGL, or "3D off". */
 export function PosterBackdrop() {
   const station = useLab((s) => s.station)
+  const current = STATIONS.find((s) => s.id === station)?.poster
+  // Several stations share a still; render each file once.
+  const posters = [...new Set(STATIONS.map((s) => s.poster))]
 
   return (
     <div aria-hidden className="fixed inset-0 z-0 bg-[#05070D]">
-      {STATIONS.map((s) => (
+      {posters.map((poster, i) => (
         // eslint-disable-next-line @next/next/no-img-element -- decorative full-bleed stills, swapped by opacity
         <img
-          key={s.id}
-          src={`/3d/posters/${s.id}.webp`}
+          key={poster}
+          src={`/3d/posters/${poster}.webp`}
           alt=""
           decoding="async"
-          loading={s.index === 0 ? "eager" : "lazy"}
+          loading={i === 0 ? "eager" : "lazy"}
           className={cn(
             "absolute inset-0 size-full object-cover transition-opacity duration-700 motion-reduce:transition-none",
-            s.id === station ? "opacity-100" : "opacity-0",
+            poster === current ? "opacity-100" : "opacity-0",
           )}
         />
       ))}

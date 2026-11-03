@@ -2,13 +2,32 @@ import type { Howl } from "howler"
 
 import type { StationId } from "@/lib/three/stations.config"
 
-export type Sfx = "whoosh" | "tick" | "chime"
+export type Sfx =
+  | "whoosh"
+  | "tick"
+  | "chime"
+  | "click"
+  | "navOpen"
+  | "navClose"
+  | "zap"
+  | "card"
+  | "success"
+  | "rise"
+  | "intro"
 
 // Offsets in ms, from 3d-src/tools/gen-audio.mjs (also written to public/3d/audio/sfx.json).
 const SPRITE: Record<Sfx, [number, number]> = {
   whoosh: [0, 1100],
   tick: [1350, 60],
   chime: [1660, 1600],
+  click: [3510, 90],
+  navOpen: [3800, 220],
+  navClose: [4220, 200],
+  zap: [4620, 320],
+  card: [5140, 160],
+  success: [5500, 1500],
+  rise: [7200, 2400],
+  intro: [9800, 1000],
 }
 
 const AMBIENT_MIX: Record<StationId, { volume: number; rate: number }> = {
@@ -17,9 +36,27 @@ const AMBIENT_MIX: Record<StationId, { volume: number; rate: number }> = {
   engine: { volume: 0.4, rate: 1 },
   experience: { volume: 0.2, rate: 0.94 },
   vault: { volume: 0.22, rate: 0.9 },
+  services: { volume: 0.2, rate: 1.04 },
+  contact: { volume: 0.2, rate: 1.08 },
+  footer: { volume: 0.14, rate: 0.72 },
 }
 
-const SFX_VOLUME: Record<Sfx, number> = { whoosh: 0.35, tick: 0.12, chime: 0.4 }
+const SFX_VOLUME: Record<Sfx, number> = {
+  whoosh: 0.35,
+  tick: 0.12,
+  chime: 0.4,
+  click: 0.3,
+  navOpen: 0.22,
+  navClose: 0.2,
+  zap: 0.16,
+  card: 0.3,
+  success: 0.45,
+  rise: 0.6,
+  intro: 0.3,
+}
+
+/** Sounds that can fire every few frames while the pointer sweeps over objects. */
+const THROTTLE_MS: Partial<Record<Sfx, number>> = { tick: 90, zap: 140 }
 
 /**
  * Lazy Howler wrapper. Nothing is downloaded until the visitor turns sound on;
@@ -31,7 +68,7 @@ class AudioManager {
   private ambient: Howl | null = null
   private sfx: Howl | null = null
   private station: StationId = "client"
-  private lastTick = 0
+  private lastPlayed: Partial<Record<Sfx, number>> = {}
 
   private load() {
     this.loading ??= import("howler").then(({ Howl }) => {
@@ -73,11 +110,11 @@ class AudioManager {
 
   play(name: Sfx) {
     if (!this.enabled || !this.sfx) return
-    // Hover ticks can fire every frame while the pointer sweeps across pods.
-    if (name === "tick") {
+    const gap = THROTTLE_MS[name]
+    if (gap) {
       const now = performance.now()
-      if (now - this.lastTick < 90) return
-      this.lastTick = now
+      if (now - (this.lastPlayed[name] ?? 0) < gap) return
+      this.lastPlayed[name] = now
     }
     const id = this.sfx.play(name)
     this.sfx.volume(SFX_VOLUME[name], id)

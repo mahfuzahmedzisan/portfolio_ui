@@ -22,12 +22,19 @@ export const MODEL_URLS = {
   vault: "/3d/models/vault.glb",
   skills: "/3d/models/skills.glb",
   experience: "/3d/models/experience.glb",
+  hero: "/3d/models/hero.glb",
+  about: "/3d/models/about.glb",
+  services: "/3d/models/services.glb",
+  shapes: "/3d/models/shapes.glb",
+  contact: "/3d/models/contact.glb",
+  devices: "/3d/models/devices.glb",
+  footer: "/3d/models/footer.glb",
 } as const
 
 export type ModelName = keyof typeof MODEL_URLS
 
 /** Blender material slots: the frontend swaps each one for an accent-aware material. */
-export type MaterialRole = "Surface" | "Trim" | "Neon" | "Glass"
+export type MaterialRole = "Surface" | "Trim" | "Neon" | "Glass" | "Skin" | "Hair" | "Hoodie"
 
 export type Part = { geometry: BufferGeometry; role: MaterialRole }
 
@@ -62,6 +69,9 @@ export function bakeParts(root: Object3D): Part[] {
     geometry.setAttribute("position", toFloat(source.getAttribute("position") as BufferAttribute))
     const normal = source.getAttribute("normal") as BufferAttribute | undefined
     if (normal) geometry.setAttribute("normal", toFloat(normal))
+    // Texture-mapped parts (device screens) keep their UVs.
+    const uv = source.getAttribute("uv") as BufferAttribute | undefined
+    if (uv) geometry.setAttribute("uv", toFloat(uv))
     if (source.index) geometry.setIndex(source.index.clone())
     geometry.applyMatrix4(child.matrixWorld)
     geometry.computeBoundingSphere()
@@ -85,7 +95,27 @@ export function useParts<const N extends string>(model: ModelName, names: readon
   }, [nodes, model, names])
 }
 
-export type Palette = Record<MaterialRole, Material>
+/** The four slots every Blender model uses; Skin/Hair/Hoodie exist only on the about character. */
+/**
+ * Readable on the dark floor: a lit slate body, pale trim and an accent glow. Used for the objects the
+ * visitor is meant to study up close (services, character, launch pad), unlike the moody station sets.
+ */
+export function useLitPalette(accent: string, intensity = 2.6): Palette {
+  return useMemo(() => {
+    const glow = new Color(accent)
+    return {
+      Surface: new MeshStandardMaterial({ color: "#33415F", emissive: glow, emissiveIntensity: 0.07, metalness: 0.35, roughness: 0.42, envMapIntensity: 0.8 }),
+      Trim: new MeshStandardMaterial({ color: "#7C8DB0", metalness: 0.55, roughness: 0.3, envMapIntensity: 1 }),
+      Neon: neonMaterial(accent, intensity),
+      Glass: new MeshStandardMaterial({ color: "#5B8FD0", metalness: 0.1, roughness: 0.05, transparent: true, opacity: 0.4 }),
+      Skin: new MeshStandardMaterial({ color: "#D39A78", metalness: 0, roughness: 0.65 }),
+      Hair: new MeshStandardMaterial({ color: "#1B1512", metalness: 0.1, roughness: 0.5 }),
+      Hoodie: new MeshStandardMaterial({ color: "#1F4E80", metalness: 0.1, roughness: 0.55, emissive: glow, emissiveIntensity: 0.05 }),
+    }
+  }, [accent, intensity])
+}
+
+export type Palette = Record<"Surface" | "Trim" | "Neon" | "Glass", Material> & Partial<Record<"Skin" | "Hair" | "Hoodie", Material>>
 
 /** Emissive strength above 1 is what the bloom threshold picks up. */
 export function neonMaterial(color: string | Color, intensity = 3): MeshBasicMaterial {
@@ -100,6 +130,10 @@ export function usePalette(accent: string, intensity = 3): Palette {
       Trim: new MeshStandardMaterial({ color: "#1A2238", metalness: 0.9, roughness: 0.22, envMapIntensity: 1 }),
       Neon: neonMaterial(accent, intensity),
       Glass: new MeshStandardMaterial({ color: "#1E3A5F", metalness: 0.1, roughness: 0.05, transparent: true, opacity: 0.35 }),
+      // Only the character uses these; the rest of the scene never asks for them.
+      Skin: new MeshStandardMaterial({ color: "#C98B68", metalness: 0, roughness: 0.7 }),
+      Hair: new MeshStandardMaterial({ color: "#14100E", metalness: 0.1, roughness: 0.55 }),
+      Hoodie: new MeshStandardMaterial({ color: "#0F2A47", metalness: 0.15, roughness: 0.6 }),
     }),
     [accent, intensity],
   )

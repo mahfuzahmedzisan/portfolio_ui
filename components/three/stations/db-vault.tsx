@@ -25,10 +25,23 @@ import { ANCHORS, crystalPosition } from "@/lib/three/stations.config"
 import { audio } from "../audio/audio-manager"
 import { InstancedParts, Parts } from "../instanced-parts"
 import { type Part, usePalette, useParts } from "../models"
+import { useSpark } from "../use-spark"
 import { createHologramMaterial } from "../shaders/hologram"
 import { DISPLAY_FONT } from "./browser-city"
 
 const NODES = ["Server_Rack", "Crystal", "Vault_Ring"] as const
+const SHAPE_NODES = [
+  "Shape_Cube",
+  "Shape_Sphere",
+  "Shape_Torus",
+  "Shape_Pyramid",
+  "Shape_Drum",
+  "Shape_Prism",
+  "Shape_Spike",
+  "Shape_Knot",
+] as const
+/** Spreads neighbouring projects across the nine silhouettes (the original crystal plus the eight shapes). */
+const SHAPE_ORDER = [0, 3, 6, 1, 4, 7, 2, 5, 8]
 const EMERALD = "#34D399"
 
 const crystalVertex = /* glsl */ `
@@ -81,6 +94,7 @@ function Crystal({ project, index, total, part, filter }: CrystalProps) {
   const focused = useLab((s) => s.focusedProject === project.slug)
   const focusProject = useLab((s) => s.focusProject)
   const hover = useRef({ value: 0 })
+  const spark = useSpark(project.accent_color)
   const base = useMemo(() => crystalPosition(index, total, new Vector3()), [index, total])
   // A skill filter lights the crystals built with it and sinks the rest.
   const match = filter === null ? 0 : project.stack.includes(filter) ? 1 : -1
@@ -121,7 +135,17 @@ function Crystal({ project, index, total, part, filter }: CrystalProps) {
 
   return (
     <group>
-      <group ref={group} onPointerOver={over} onPointerOut={out} onClick={click} scale={1.25}>
+      <group
+        ref={group}
+        onPointerOver={over}
+        onPointerOut={out}
+        onPointerMove={(e) => {
+          e.stopPropagation()
+          spark(e)
+        }}
+        onClick={click}
+        scale={1.25}
+      >
         <mesh ref={gem} geometry={part.geometry} material={material} />
       </group>
       <group position={[base.x, base.y - 1.55, base.z]}>
@@ -141,6 +165,9 @@ function Crystal({ project, index, total, part, filter }: CrystalProps) {
 
 export function DatabaseVault({ projects, skills }: { projects: LabProject[]; skills: Skill[] }) {
   const parts = useParts("vault", NODES)
+  const shapes = useParts("shapes", SHAPE_NODES)
+  // Index 0 is the vault's own crystal; 1..8 are the shape nodes.
+  const silhouettes = useMemo(() => [parts.Crystal[0], ...SHAPE_NODES.map((name) => shapes[name][0])], [parts, shapes])
   const filterId = useLab((s) => s.skillFilter)
   const filter = skills.find((s) => s.id === filterId)?.name ?? null
   const palette = usePalette(EMERALD, 2.4)
@@ -174,7 +201,7 @@ export function DatabaseVault({ projects, skills }: { projects: LabProject[]; sk
       </group>
       <pointLight color={EMERALD} intensity={40} distance={22} decay={1.8} position={[ANCHORS.vault.x, 7, ANCHORS.vault.z + 2]} />
       {projects.map((project, i) => (
-        <Crystal key={project.slug} project={project} index={i} total={projects.length} part={parts.Crystal[0]} filter={filter} />
+        <Crystal key={project.slug} project={project} index={i} total={projects.length} part={silhouettes[SHAPE_ORDER[i % SHAPE_ORDER.length]]} filter={filter} />
       ))}
     </group>
   )

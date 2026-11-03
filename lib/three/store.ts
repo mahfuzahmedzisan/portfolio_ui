@@ -34,6 +34,9 @@ type LabState = {
   /** True once the visitor has left the boot screen. */
   entered: boolean
   sound: boolean
+  /** Service card shown in the details panel (index into the services content). */
+  activeService: number
+  contactStatus: "idle" | "sending" | "sent" | "error"
   hoveredSkill: number | null
   /** Skill artifact pulled in front of the camera. */
   inspectedSkill: number | null
@@ -49,6 +52,8 @@ type LabState = {
   setArchiveQuery: (query: Partial<ArchiveQuery>) => void
   setArchiveLayout: (layout: ArchiveLayout) => void
   setHoveredProject: (slug: string | null) => void
+  setActiveService: (index: number) => void
+  setContactStatus: (status: LabState["contactStatus"]) => void
   setScene: (scene: LabScene) => void
   setReadyScene: (key: string) => void
   setProgress: (progress: number) => void
@@ -84,6 +89,10 @@ export const useLab = create<LabState>((set, get) => ({
   setArchiveLayout: (archiveLayout) => set({ archiveLayout }),
   setHoveredProject: (hoveredProject) => set({ hoveredProject }),
   progress: 0,
+  activeService: 0,
+  contactStatus: "idle",
+  setActiveService: (activeService) => set({ activeService }),
+  setContactStatus: (contactStatus) => set({ contactStatus }),
   station: "client",
   mode: "pending",
   tier: "medium",

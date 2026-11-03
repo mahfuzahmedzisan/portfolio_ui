@@ -7,6 +7,7 @@ import { type ReactNode, Suspense, useEffect } from "react"
 import { QUALITY, TIERS } from "@/lib/three/quality"
 import { sceneKey, useLab } from "@/lib/three/store"
 
+import { CursorSparks } from "./effects/cursor-sparks"
 import { Effects } from "./effects"
 import { LookControls } from "./look-controls"
 import { preloadModels } from "./models"
@@ -83,7 +84,7 @@ export default function Experience({ skills, experiences, projects, debug = fals
       <Canvas
         dpr={quality.dpr}
         gl={{ antialias: false, powerPreference: "high-performance", stencil: false }}
-        camera={{ fov: 48, near: 0.1, far: 320, position: [0, 8, 30] }}
+        camera={{ fov: 48, near: 0.1, far: 360, position: [0, 8, 30] }}
       >
         <color attach="background" args={[BACKGROUND]} />
         <fogExp2 attach="fog" args={[BACKGROUND, 0.02]} />
@@ -113,6 +114,7 @@ export default function Experience({ skills, experiences, projects, debug = fals
           </SceneSlot>
         ) : null}
 
+        <CursorSparks />
         <LookControls />
         <Effects />
         <Adaptive />
